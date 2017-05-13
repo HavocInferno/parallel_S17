@@ -1,0 +1,85 @@
+\section{Task 1.1}
+\begin{frame}
+\frametitle{Task 1.1 Understanding the code}
+\begin{itemize}
+\item 1. Show the initial performance data.
+\item 2. Explain how the FLOP/s metric is measured. Which floating point operations are taken into account?
+\end{itemize}
+\end{frame}
+
+%task1
+\begin{frame}
+\frametitle{1.1.1. Show the initial performance data}
+\begin{center}
+  \begin{tabular}{ l | r }
+    \hline
+    Resolution & MFlop/s \\ \hline
+    100 & 475.407468 \\ \hline
+	300 & 410.097573 \\ \hline
+	500 & 389.720385 \\ \hline
+	700 & 345.743325 \\ \hline
+	900 & 266.359908 \\ \hline
+	1100 & 245.029018 \\ \hline
+	1300 & 241.159283 \\ \hline
+	1500 & 228.631083 \\ \hline
+	1700 & 217.060715 \\ \hline
+	1900 & 208.342824 \\ \hline
+	2100 & 216.940421 \\ \hline
+	2300 & 189.397070 \\ \hline
+	2500 & 180.502628 \\ \hline
+	2700 & 185.770487 \\ \hline
+	2900 & 176.501386 \\ \hline
+	\end{tabular}
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{1.1.1. Show the initial performance data}
+\begin{itemize}
+\item It seems to stabilize at around 180 MFlop/s
+\item Gauss-Seidel achieves 591.7 MFlop/s
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{1.1.2. Explain how the FLOP/s metric is measured. Which floating point operations are taken into account?}
+\begin{lstlisting}
+	// Flop count after <i> iterations
+	flop = iter * 11.0 * param.act_res * param.act_res;
+\end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{1.1.2. Explain how the FLOP/s metric is measured. Which floating point operations are taken into account?}
+\begin{lstlisting}
+int i, j;
+    for( j=1; j<sizex-1; j++ )
+    {
+	for( i=1; i<sizey-1; i++ )
+        {
+	    utmp[i*sizex+j]= 0.25 * (u[ i*sizex     + (j-1) ]+
+				     u[ i*sizex     + (j+1) ]+
+				     u[ (i-1)*sizex + j     ]+
+				     u[ (i+1)*sizex + j     ]);
+	}
+    }
+\end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{1.1.2. Explain how the FLOP/s metric is measured. Which floating point operations are taken into account?}
+\begin{lstlisting}
+    double unew, diff, sum=0.0;
+	for( i=1; i<sizey-1; i++ )
+    {
+	for( j=1; j<sizex-1; j++ )
+        {
+	    unew = 0.25 * (u[ i*sizex     + (j-1) ]+
+			   u[ i*sizex     + (j+1) ]+
+			   u[ (i-1)*sizex + j     ]+
+			   u[ (i+1)*sizex + j     ]);
+
+	    diff = unew - u[i*sizex + j];
+	    sum += diff * diff; 
+	}
+    }
+\end{lstlisting}
+\end{frame}

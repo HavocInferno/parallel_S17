@@ -1,0 +1,17 @@
+#!/bin/bash
+#@ wall_clock_limit =00:2:00
+#@ job_name = heatdir_papi
+#@ job_type = parallel
+#@ class = test
+#@ energy_policy_tag= NONE
+#@ output = job$(jobid).out
+#@ error = job$(jobid).out
+#@ node = 1
+#@ network.MPI = us
+#@ island_count = 1
+#@ total_tasks = 1
+#@ queue
+perf_off
+./etc/profile
+cd /gpfs/work/h039v/h039vat/heatdir
+poe ./heat test.dat

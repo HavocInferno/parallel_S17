@@ -1,0 +1,106 @@
+#!/usr/bin/perl
+#
+# pfmon2cg, version 0.02
+# Converter for pfmon output to Cachegrind profile format
+#
+# 4/2007, Josef Weidendorfer
+#
+
+#
+# Read in pfmon data, e.g. written from the command
+#
+#  pfmon --with-header --smpl-outfile=pfmon.out \
+#        -e l2_misses --short-smpl-periods=100000 -- <command>
+#  (sampling points every 100000 L2 Misses)
+#
+# This gives a list of sampled instruction addresses ($ipps)
+ 
+while(<>) {
+	if (/^#/) {
+		if (/command line\s*:\s*(.*)$/) { $command = $1; }
+		if (/PMD\d+: (.*?)\s*(,|=)/) { $events .= "$1 "; }
+		next; 
+	}
+	if (/^entry/) {
+		($iip) = ($entry =~ /IIP:(\S+)/);
+		if ($iip ne "") { $iips .= "$iip\n"; }
+		$entry = "";
+	}
+	chomp;
+	$entry .= $_;
+}
+($iip) = ($entry =~ /IIP:(\S+)/);
+if ($iip ne "") { $iips .= "$iip\n"; }
+
+($pid) = ($entry =~ /PID:(\S+)/);
+
+open OUT, ">.p2cg";
+print OUT $iips;
+close OUT;
+
+
+# Let addr2line convert the instruction addresses into
+# source code references (needs debug info)
+#
+# This creates hashes with event sums
+
+# Strip command line arguments
+$onlycommand = $command;
+$onlycommand =~ s/\s.*//;
+
+$cmd = "addr2line -f -e $onlycommand < .p2cg";
+#print "#Run Cmd $cmd\n";
+open ATOL, "$cmd < .p2cg|";
+while(<ATOL>) {
+	chomp;
+	$func = $_;
+	$fileline = <ATOL>;
+	chomp $fileline;
+	($file,$line) = ($fileline =~ /(.*?):(.*)/);
+	#print "Func $func, file $file, line $line\n";
+
+	if ($file{$func} eq "") {
+		push @funcs, $func;
+		$file{$func} = $file;
+	}
+	if ($count{$func,$line} eq "") {
+		$tmp = $lines->{$func};
+		$tmp = [] unless defined $tmp;
+		push @$tmp, $line;
+		$lines->{$func} = $tmp;
+	}
+	$count{$func,$line}++;
+	$totals++;
+}
+close ATOL;
+
+#
+# Dump out Cachegrind format
+#
+
+# First header info...
+print "version: 1\n";
+print "creator: pf2mon 0.02\n";
+print "pid: $pid\n";
+print "cmd: $command\n\n";
+
+print "positions: line\n";
+print "events: $events\n";
+print "summary: $totals\n\n";
+
+
+# Now profiling data.
+# 
+# We only support static linked binaries for now, so all code
+# is in the binary
+print "ob=$onlycommand\n";
+
+foreach $f (@funcs) {
+	print "\nfl=$file{$f}\n";
+	print "fn=$f\n";
+	$tmp = $lines->{$f};
+	foreach $l (@$tmp) {
+		print "$l $count{$f,$l}\n";
+	}
+}
+

@@ -1,0 +1,19 @@
+\frametitle{Task 1.4 Gprof - gmon.out of run after ``-p -g" compile 4/4}
+\begin{lstlisting}
+                0.00    0.00      15/15          main [1]
+[9]      0.0    0.00    0.00      15         finalize [9]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[10]     0.0    0.00    0.00       1         print_params [10]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[11]     0.0    0.00    0.00       1         read_input [11]
+-----------------------------------------------
+
+Index by function name
+
+   [7] __libm_pow_e7          [10] print_params            [4] write_image
+   [6] coarsen                [11] read_input              [8] wtime
+   [9] finalize                [2] relax_jacobi
+   [5] initialize              [3] residual_jacobi
+\end{lstlisting}
