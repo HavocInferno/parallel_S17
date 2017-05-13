@@ -91,9 +91,9 @@ int main( int argc, char *argv[] )
     int retval;
     // loop over different resolutions
     while(1) {
-
+      
 	// free allocated memory of previous experiment
-	if (param.u != 0)
+        if (param.u != 0)
 	    finalize(&param);
 
 	if( !initialize(&param) )
@@ -118,16 +118,17 @@ int main( int argc, char *argv[] )
 	//init PAPI Library
 	//fprintf(stderr, "Optimal length %d\n", PAPI_num_counters()); //Debug
 	//PAPI_library_init(PAPI_VER_CURRENT);
-	int num_events = 3; //cpi(instructions, cycles), floprate, L2 hit/miss, L3 hit/miss
-	long long values [3];
-	int events []= {PAPI_TOT_CYC, PAPI_TOT_INS,PAPI_FP_INS};//,  PAPI_L2_TCA, PAPI_L2_TCM, PAPI_L3_TCA, PAPI_L3_TCM};
-	//check events
-	int a;
+	int num_events = 3; //must be adjusted to actual num
+	long long values [num_events];
+	int events []= {PAPI_TOT_CYC, PAPI_TOT_INS,PAPI_FP_OPS};//,  PAPI_L2_TCA, PAPI_L2_TCM, PAPI_L3_TCA, PAPI_L3_TCM};
+	//check events, needs PAPi_lib
+	/*int a;
 	for (a=0; a<3; a++)
 	  {
 	    if ((PAPI_query_event(events[a]))!=PAPI_OK)
 	      fprintf(stderr, "Error with Papi event at Pos %d\n", a);
 	  }
+	*/
 	if ((retval=(PAPI_start_counters(events, num_events)))!=PAPI_OK)
 	  fprintf(stderr, "Error starting PAPI counters: Returns %i \n", retval);
 	
