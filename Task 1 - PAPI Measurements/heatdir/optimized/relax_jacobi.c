@@ -65,3 +65,33 @@ void relax_jacobi(double *u, double *utmp, unsigned sizex, unsigned sizey) {
 	}
 	*/
 }
+
+/*
+ * One Jacobi iteration step plus residual
+ */
+double relax_jacobi_plusresidual(double *u, double *utmp, unsigned sizex, unsigned sizey) {
+	int i, j;
+	double diff, sum = 0.0;
+	//idea for optimization: 	- array padding (less conflict misses)
+	//							- go through rows instead of columns
+	//							- manual vectorization
+	//							- loop unrolling
+	for (j = 1; j < sizex - 1; j++) {
+		for (i = 1; i < sizey - 1; i++) {
+			utmp[i + j * sizey] = 0.25 * (u[i + (j - 1) * sizey] +  // left
+						u[i + (j + 1) * sizey] +  // right
+						u[(i - 1) + j * sizey] +  // top
+						u[(i + 1) + j * sizey]); // bottom
+						
+			diff = utmp[i + j * sizey] - u[i + j * sizey];
+			sum += diff * diff;
+		}
+	}
+	
+	// optimization: instead of copying from utmp to u, just swap the pointers
+	double* temp = u;
+	u = utmp;
+	utmp = temp;
+
+	return sum;
+}

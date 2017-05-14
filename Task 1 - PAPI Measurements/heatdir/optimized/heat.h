@@ -59,8 +59,10 @@ void relax_gauss( double *u,
 // Jacobi: relax_jacobi.c
 double residual_jacobi( double *u, double* utmp,
 			unsigned sizex, unsigned sizey );
-void relax_jacobi( double *u, double *utmp,
+double relax_jacobi( double *u, double *utmp,
 		   unsigned sizex, unsigned sizey ); 
+double relax_jacobi_plusresidual( double *u, double *utmp,
+		   unsigned sizex, unsigned sizey );
 
 
 #endif // JACOBI_H_INCLUDED
