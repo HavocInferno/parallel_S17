@@ -29,6 +29,7 @@ void relax_jacobi_optCA (double *u, double *utmp, unsigned sizex, unsigned sizey
 double residual_jacobi_optCA (double *u, double *utmp, unsigned sizex, unsigned sizey);
 void relax_jacobi_optPS (double **u, double **utmp, unsigned sizex, unsigned sizey);
 double relax_jacobi_optAIO (double **u, double **utmp, unsigned sizex, unsigned sizey);
+void arraySwap(double** a, double** b, int sizex, int sizey);
 
 int main( int argc, char *argv[] )
 {
@@ -38,7 +39,7 @@ int main( int argc, char *argv[] )
 
     // algorithmic parameters
     algoparam_t param;
-    int np;
+    int np, i, j;
 
     double runtime, flop;
     double residual;
@@ -178,6 +179,13 @@ int main( int argc, char *argv[] )
 					break;
 					
 				case 4: // JACOBI_OPT_AIO
+					if(iter==0) {
+						for (i = 1; i < np - 1; i++) {
+							for (j = 1; j < np - 1; j++) {
+								(param.uhelp)[i * np + j] = (param.u)[i * np + j];
+							}
+						}
+					}
 					residual = relax_jacobi_optAIO (&(param.u), &(param.uhelp), np, np);
 					break;
 					
@@ -259,10 +267,10 @@ double residual_jacobi_optCA(double *u, double *utmp, unsigned sizex, unsigned s
 	//							- vectorization
 	for (i = 1; i < sizey - 1; i++) {
 		for (j = 1; j < sizex - 1; j++) {
-			unew = 0.25 * (u[i + (j - 1)*sizey] +  // left
-						u[i + (j + 1)*sizey] +  // right
-						u[(i - 1) + j*sizey] +  // top
-						u[(i + 1) + j*sizey]); // bottom
+			unew = 0.25 * (u[i * sizex + (j - 1)] +  // left
+						u[i * sizex + (j + 1)] +  // right
+						u[(i - 1) * sizex + j] +  // top
+						u[(i + 1) * sizex + j]); // bottom
 
 			diff = unew - u[i * sizex + j];
 			//diff = utmp[i+j*sizey] - u[i+j*sizey];
@@ -283,20 +291,16 @@ void relax_jacobi_optCA(double *u, double *utmp, unsigned sizex, unsigned sizey)
 	 */
 	for (i = 1; i < sizey - 1; i++) {
 		for (j = 1; j < sizex - 1; j++) {
-			utmp[i + j * sizey] = 0.25 * (u[i + (j - 1)*sizey] +  // left
-						u[i + (j + 1)*sizey] +  // right
-						u[(i - 1) + j*sizey] +  // top
-						u[(i + 1) + j*sizey]); // bottom
+			utmp[i * sizex + j] = 0.25 * (u[i * sizex + (j - 1)] +  // left
+						u[i * sizex + (j + 1)] +  // right
+						u[(i - 1) * sizex + j] +  // top
+						u[(i + 1) * sizex + j]); // bottom
 		}
 	}
 	
 	// copy from utmp to u
 	// idea for optimization: - instead of copying from utmp to u, just swap the pointers
-	for (i = 1; i < sizey - 1; i++) {
-		for (j = 1; j < sizex - 1; j++) {
-			u[i * sizex + j] = utmp[i * sizex + j];
-		}
-	}
+	arraySwap(&u, &utmp, sizex, sizey);
 }
 
 /*	SECOND OPTIMIZATION
@@ -349,6 +353,17 @@ double relax_jacobi_optAIO(double **u, double **utmp, unsigned sizex, unsigned s
 							- manual vectorization
 							- loop unrolling
 	 */ 
+	 
+	// optimization: instead of copying from utmp to u, just swap the pointers
+	/* 
+	 *	SWAP 
+	 */
+	arraySwap(u,utmp, sizex, sizey);
+	
+	
+	/*
+	 * RESIDUAL (+ RELAXATION)
+	 */
 	double *a, *atmp;
 	a = *u;
 	atmp = *utmp;
@@ -369,10 +384,21 @@ double relax_jacobi_optAIO(double **u, double **utmp, unsigned sizex, unsigned s
 		}
 	}
 	
-	// optimization: instead of copying from utmp to u, just swap the pointers
+	return sum;
+}
+
+void arraySwap(double** a, double** b, int sizex, int sizey) {
+	int i,j;
+
+	for (i = 1; i < sizey - 1; i++) {
+		for (j = 1; j < sizex - 1; j++) {
+			(*a)[i * sizex + j] = (*b)[i * sizex + j];
+		}
+	}
+
+	/*
 	double *temp = *u;
 	*u = *utmp;
 	*utmp = temp;
-	
-	return sum;
+	*/
 }
