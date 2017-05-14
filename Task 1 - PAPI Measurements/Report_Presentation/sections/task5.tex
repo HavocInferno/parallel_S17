@@ -1,0 +1,90 @@
+\section{Task 2}
+\begin{frame}
+\frametitle{Task 2: Sequential Optimization}
+Access patterns into the Matrix
+\item Before Optimization: row wise access in relax_jacobi
+\item low spacial locality
+\begin{lstlisting}
+	for (j = 1; j < sizex - 1; j++) {
+		for (i = 1; i < sizey - 1; i++) {
+			utmp[i * sizex + j] = 0.25 * (u[i * sizex + (j - 1)] +  // left
+						u[i * sizex + (j + 1)] +  // right
+						u[(i - 1) * sizex + j] +  // top
+						u[(i + 1) * sizex + j]); // bottom
+
+			...
+		}
+	}
+\end{lstlisting}
+\item{Solution: change loop, column wise access }
+\begin{lstlisting}
+	for (j = 1; j < sizex - 1; j++) {
+		for (i = 1; i < sizey - 1; i++) {
+			utmp[i + j * sizey] = 0.25 * (a[i + (j - 1)*sizey] +  // left
+						a[i + (j + 1)*sizey] +  // right
+						a[(i - 1) + j*sizey] +  // top
+						a[(i + 1) + j*sizey]); // bottom
+						
+						...
+		}
+	}
+\end{lstlisting}
+
+Avoid copy operations
+\item Before Optimization: in relax_jacobi, copy back all new values back to the array
+\begin{lstlisting}
+	for (j = 1; j < sizex - 1; j++) {
+		for (i = 1; i < sizey - 1; i++) {
+			u[i * sizex + j] = utmp[i * sizex + j];
+		}
+	}
+\end{lstlisting}
+\item Idea: Instead of recomputing, just swap the pointers
+\begin{lstlisting}
+	double* temp = *u;
+	*u = *utmp;
+	*utmp = temp;
+\end{lstlisting}
+\item Note: for some weird C reason, this does not work...
+
+
+Calculation of Residuum
+\item Before Optimization: For residual at timestep t, compute entire relaxation of timestep t+1
+\begin{lstlisting}
+	for (j = 1; j < sizex - 1; j++) {
+		for (i = 1; i < sizey - 1; i++) {
+			unew[i + j * sizey] = 0.25 * (a[i + (j - 1)*sizey] +  // left
+						a[i + (j + 1)*sizey] +  // right
+						a[(i - 1) + j*sizey] +  // top
+						a[(i + 1) + j*sizey]); // bottom
+						
+						diff = unew - u[i * sizex + j];
+						sum += diff * diff;
+		}
+	}
+\end{lstlisting}
+\item Idea: Save results of previous timestep to compute residual
+\begin{lstlisting}
+	for (j = 1; j < sizex - 1; j++) {
+		for (i = 1; i < sizey - 1; i++) {
+			diff = utmp[i+j*sizey] - u[i+j*sizey];
+			sum += diff * diff;
+		}
+	}
+\end{lstlisting}
+
+Cache optimization by interleaving of iterations: tiling and wavefront
+\item Due to the spatial dependencies between the grid points, tiling and wavefront become non-trivial
+\item Traditional tiling would yield wrong/old values at the borders
+\item Due to the already sequential access pattern, wavefront interleaving is not expected to give a significant improval of cache behaviour in a non-parallel environment
+
+//TODO: Add in benchmark results
+
+ There is a performance issue around sizes of powers of 2, e.g. np=1020/1022/1024/1026. Can you explain it? How to get rid of that issue?
+ 
+ When using array sizes of powers of two, the entries above and below will have similar least significant bits, this will cause them to be put into the same cache set. Hence, conflict misses will become more probable.
+ A way to get rid of this problem is array padding, so padding the arrays with a couple more entries, so that the least significant bits of neighboring cachelines differ, therefore reducing conflict misses.
+ 
+
+
+\end{frame}
