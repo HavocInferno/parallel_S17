@@ -97,7 +97,6 @@ int main( int argc, char *argv[] )
 	finalize(&param);
       
       if( !initialize(&param) )
-
 	{
 	  fprintf(stderr, "Error in Jacobi initialization.\n\n");
 	  
@@ -116,40 +115,34 @@ int main( int argc, char *argv[] )
       iter = 0;
 
 
-      //needed for cache, probably doesnt work
-      /* initialize papi
+      /*
+	use for ipc, flips and flops calc
        */
-      //init PAPI Library
-      //fprintf(stderr, "Optimal length %d\n", PAPI_num_counters()); //Debug
-      //PAPI_library_init(PAPI_VER_CURRENT);
-      /*int eventSet = PAPI_NULL;
-	if (retval(PAPI_create_eventset(&eventSet))!=PAPI_OK)
-	fprintf(stderr, "Error %d\n", retval);
-	if ((retval=PAPI_add_event(eventSet, PAPI_TOT_INS))!=PAPI_OK)
-	fprintf(stderr, "Error %d\n", retval);
-
-	
-      */
-
-      float rtime;
+      /*float rtime;
       float ptime;
       long long flpops;
       float mflops;
       int err;
       if((err=PAPI_flops(&rtime,&ptime,&flpops,&mflops))<PAPI_OK)
 	fprintf(stderr, "%d", err);
-
-      /* also needed for cache, doesnt work as well
-      int num_events = 2; //must be adjusted to actual num
-      long long values [2];
-      int events [2]= {
-	//PAPI_FP_OPS, 
-	PAPI_L2_ICM,
-	PAPI_L2_DCM};//PAPI_TOT_CYC, PAPI_TOT_INS,PAPI_FP_OPS,  PAPI_L2_TCA, PAPI_L2_TCM, PAPI_L3_TCA, PAPI_L3_TCM};      //check events, needs PAPi_lib
-      
-     if ((retval=(PAPI_start_counters(events, 2)))!=PAPI_OK)
-	fprintf(stderr, "Error starting PAPI counters: Returns %i \n", retval);
       */
+      //use for cache
+      int num_events = 2; //must be adjusted to actual num
+      long long values [num_events];
+      int events []= {       
+	PAPI_L3_TCA,
+	PAPI_L3_TCM
+      };
+      /*
+      //apparently there is only a small subset of events which can be measured together. 
+      test with papi_command_line event1 event2...
+      cf page 18 of the papi documentation linked on moodle
+      */
+      //PAPI_TOT_CYC, PAPI_TOT_INS,PAPI_FP_OPS,  PAPI_L2_TCA, PAPI_L2_TCM, PAPI_L3_TCA, PAPI_L3_TCM};      
+      
+     if ((retval=(PAPI_start_counters(events, 2)))<PAPI_OK)
+	fprintf(stderr, "Error starting PAPI counters: Returns %i \n", retval);
+      
       
       
       while(1) {
@@ -181,15 +174,21 @@ int main( int argc, char *argv[] )
 	if (iter % 100 == 0)
 	  fprintf(stderr, "residual %f, %d iterations\n", residual, iter);
       }
-       //printf("Flops %lld\nIns %lld\nCycles 0\n", values[0],values[1]);
+      /*
+	output of flips, flops and ipc calc
+       */
       //flop calculcation by PAPI, actually works. prints #flops MFlop/s
-      if ((err=PAPI_flops(&rtime,&ptime,&flpops,&mflops))<PAPI_OK)
+      /*if ((err=PAPI_flops(&rtime,&ptime,&flpops,&mflops))<PAPI_OK)
 	fprintf(stderr,"Error reading flops %d", err);
-      printf("%lld %f \n", flpops, mflops);
-      //needed for cache
-      /*if (((PAPI_stop_counters(values, num_events)))!=PAPI_OK)
+	printf("%lld %f \n", flpops, mflops);*/
+      /*
+	output of Cache counters
+       */
+      if (((PAPI_stop_counters(values, num_events)))<PAPI_OK)
 	fprintf(stderr, "Error stopping PAPI Counters: Returns %d\n", retval);
-      */
+      printf("%lld %lld\n", values[0], values[1]);
+      
+
       // Flop count after <i> iterations
       flop = iter * 11.0 * param.act_res * param.act_res;
       // stopping time
