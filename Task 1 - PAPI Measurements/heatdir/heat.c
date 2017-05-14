@@ -20,7 +20,8 @@ void usage( char *s )
     fprintf(stderr, 
 	    "Usage: %s <input file> [result file]\n\n", s);
 }
-
+void relax_jacobi_opt(double *u, double *utmp, unsigned sizex, unsigned sizey);
+double residual_jacobi_opt (double *u, double *utmp, unsigned sizex, unsigned sizey);
 
 int main( int argc, char *argv[] )
 {
@@ -129,16 +130,17 @@ int main( int argc, char *argv[] )
       //use for cache
       int num_events = 2; //must be adjusted to actual num
       long long values [num_events];
-      int events []= {       
-	PAPI_L3_TCA,
-	PAPI_L3_TCM
+      	//change to PAPI_L2_TC* for L2 rates
+	int events []= {       
+	PAPI_L2_TCA,
+	PAPI_L2_TCM
       };
       /*
       //apparently there is only a small subset of events which can be measured together. 
       test with papi_command_line event1 event2...
       cf page 18 of the papi documentation linked on moodle
       */
-      //PAPI_TOT_CYC, PAPI_TOT_INS,PAPI_FP_OPS,  PAPI_L2_TCA, PAPI_L2_TCM, PAPI_L3_TCA, PAPI_L3_TCM};      
+   
       
      if ((retval=(PAPI_start_counters(events, 2)))<PAPI_OK)
 	fprintf(stderr, "Error starting PAPI counters: Returns %i \n", retval);
@@ -161,8 +163,14 @@ int main( int argc, char *argv[] )
 	  relax_gauss(param.u, np, np);
 	  residual = residual_gauss( param.u, param.uhelp, np, np);
 	  break;
-	}
 	
+	
+	case 2: //JACOBI_OPT
+	  relax_jacobi_opt(param.u, param.uhelp, np, np);
+	  residual= residual_jacobi_opt (param.u, param.uhelp, np, np);
+	  break;
+	  
+	  }
 	iter++;
 	
 	    // solution good enough ?
@@ -186,7 +194,11 @@ int main( int argc, char *argv[] )
        */
       if (((PAPI_stop_counters(values, num_events)))<PAPI_OK)
 	fprintf(stderr, "Error stopping PAPI Counters: Returns %d\n", retval);
-      printf("%lld %lld\n", values[0], values[1]);
+      printf("Acce: %lld\nMiss: %lld\nRate: %2.2f%%\n", 
+	     values[0], 
+	     values[1],
+	     (100.0*values[1])/values[0]
+	     );
       
 
       // Flop count after <i> iterations
@@ -219,3 +231,58 @@ int main( int argc, char *argv[] )
     
     return 0;
 }
+double residual_jacobi_opt(double *u, double* utmp, unsigned sizex, unsigned sizey) {
+	unsigned i, j;
+	double unew, diff, sum = 0.0;
+	//idea for optimization: 	go through rows instead of columns
+	//							instead of recomputing unew, compare u to utmp
+	//							vectorization
+	for (j = 1; j < sizex - 1; j++) {
+		for (i = 1; i < sizey - 1; i++) {
+/*
+			unew = 0.25 * (u[i + (j - 1)*sizey] +  // left
+						u[i + (j + 1)*sizey] +  // right
+						u[(i - 1) + j*sizey] +  // top
+						u[(i + 1) + j*sizey]); // bottom
+
+			diff = unew - u[i * sizex + j];
+*/			diff = utmp[i+j*sizey] - u[i+j*sizey];
+			sum += diff * diff;
+		}
+	}
+
+	return sum;
+}
+
+/*
+ * One Jacobi iteration step
+ */
+void relax_jacobi_opt(double *u, double *utmp, unsigned sizex, unsigned sizey) {
+	int i, j;
+	//idea for optimization: 	array padding (less conflict misses)
+	//							go through rows instead of columns
+	//							manual vectorization
+	//							loop unrolling
+	for (j = 1; j < sizex - 1; j++) {
+		for (i = 1; i < sizey - 1; i++) {
+			utmp[i + j * sizey] = 0.25 * (u[i + (j - 1)*sizey] +  // left
+						u[i + (j + 1)*sizey] +  // right
+						u[(i - 1) + j*sizey] +  // top
+						u[(i + 1) + j*sizey]); // bottom
+		}
+	}
+	
+	double* temp = u;
+	u = utmp;
+	utmp = temp;
+	// copy from utmp to u
+	//idea for optimization: instead of copying from utmp to u, just swap the pointers
+	/*
+	for (j = 1; j < sizex - 1; j++) {
+		for (i = 1; i < sizey - 1; i++) {
+			u[i * sizex + j] = utmp[i * sizex + j];
+		}
+	}
+*/
+}
+
