@@ -180,12 +180,14 @@ int main( int argc, char *argv[] )
 					
 				case 4: // JACOBI_OPT_AIO
 					if(iter==0) {
-						for (i = 1; i < np - 1; i++) {
+					  relax_jacobi_optCA(param.u, param.uhelp, np, np);
+					  /*
+					  for (i = 1; i < np - 1; i++) {
 							for (j = 1; j < np - 1; j++) {
 								(param.uhelp)[i * np + j] = (param.u)[i * np + j];
 							}
+							}*/
 						}
-					}
 					residual = relax_jacobi_optAIO (&(param.u), &(param.uhelp), np, np);
 					break;
 					
