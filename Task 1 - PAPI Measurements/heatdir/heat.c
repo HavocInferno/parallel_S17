@@ -355,6 +355,7 @@ double relax_jacobi_optAIO(double **u, double **utmp, unsigned sizex, unsigned s
 	
 	for (i = 1; i < sizey - 1; i++) {
 		for (j = 1; j < sizex - 1; j++) {
+			atmp[i * sizex + j] = 0.25 * (a[i * sizex + (j - 1)] +  // left
 						a[i * sizex + (j + 1)] +  // right
 						a[(i - 1) * sizex + j] +  // top
 						a[(i + 1) * sizex + j]); // bottom
