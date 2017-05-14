@@ -231,6 +231,9 @@ int main( int argc, char *argv[] )
     
     return 0;
 }
+
+//first optimization
+
 double residual_jacobi_opt(double *u, double* utmp, unsigned sizex, unsigned sizey) {
 	unsigned i, j;
 	double unew, diff, sum = 0.0;
@@ -254,9 +257,7 @@ double residual_jacobi_opt(double *u, double* utmp, unsigned sizex, unsigned siz
 	return sum;
 }
 
-/*
- * One Jacobi iteration step
- */
+
 void relax_jacobi_opt(double *u, double *utmp, unsigned sizex, unsigned sizey) {
 	int i, j;
 	//idea for optimization: 	array padding (less conflict misses)
