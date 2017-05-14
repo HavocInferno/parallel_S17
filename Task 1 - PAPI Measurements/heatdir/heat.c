@@ -14,14 +14,20 @@
 
 #include <papi.h>
 
+/*
+PAPI_MODE_FLOPS = flops measuring mode, 
+PAPI_MODE_CACHE = cache measuring mode
+ */
+#define PAPI_MODE_CACHE 
 
 void usage( char *s )
 {
     fprintf(stderr, 
 	    "Usage: %s <input file> [result file]\n\n", s);
 }
-void relax_jacobi_opt(double *u, double *utmp, unsigned sizex, unsigned sizey);
+void relax_jacobi_opt (double *u, double *utmp, unsigned sizex, unsigned sizey);
 double residual_jacobi_opt (double *u, double *utmp, unsigned sizex, unsigned sizey);
+double relax_jacobi_plusresidual (double *u, double *utmp, unsigned sizex, unsigned sizey);
 
 int main( int argc, char *argv[] )
 {
@@ -119,9 +125,12 @@ int main( int argc, char *argv[] )
 		/* ----------** PAPI **----------
 		 */
 		/*
-		use for ipc, flips and flops calc
+		//apparently there is only a small subset of events which can be measured together. 
+		test with papi_command_line event1 event2...
+		cf page 18 of the papi documentation linked on moodle
 		 */
-		/*
+		#ifdef PAPI_MODE_FLOPS
+		/* use for ipc, flips and flops calc */
 		float rtime;
 		float ptime;
 		long long flpops;
@@ -129,8 +138,9 @@ int main( int argc, char *argv[] )
 		int err;
 		if((err=PAPI_flops(&rtime,&ptime,&flpops,&mflops))<PAPI_OK)
 			fprintf(stderr, "%d", err);
-		 */
-		//use for cache
+		#endif
+		#ifdef PAPI_MODE_CACHE
+		/* use for cache */
 		int num_events = 2; //must be adjusted to actual num
 		long long values [num_events];
 		//change to PAPI_L2_TC* for L2 rates
@@ -138,15 +148,9 @@ int main( int argc, char *argv[] )
 		PAPI_L2_TCA,
 		PAPI_L2_TCM
 		};
-		/*
-		//apparently there is only a small subset of events which can be measured together. 
-		test with papi_command_line event1 event2...
-		cf page 18 of the papi documentation linked on moodle
-		 */
-	   
-		  
 		if ((retval=(PAPI_start_counters(events, 2)))<PAPI_OK)
 			fprintf(stderr, "Error starting PAPI counters: Returns %i \n", retval);
+		#endif
 		/* ----------** PAPI **----------
 		 */
 		
@@ -184,17 +188,15 @@ int main( int argc, char *argv[] )
 		
 		/* ----------** PAPI **----------
 		 */
-		/*
-		output of flips, flops and ipc calc
-		 */
+		#ifdef PAPI_MODE_FLOPS
+		/* output of flips, flops and ipc calc */
 		//flop calculcation by PAPI, actually works. prints #flops MFlop/s
-		/*
 		if ((err=PAPI_flops(&rtime,&ptime,&flpops,&mflops))<PAPI_OK)
 			fprintf(stderr,"Error reading flops %d", err);
-		printf("%lld %f \n", flpops, mflops);*/
-		/*
-		output of Cache counters
-		 */
+		printf("%lld %f \n", flpops, mflops);
+		#endif
+		#ifdef PAPI_MODE_CACHE
+		/* output of Cache counters */
 		if (((PAPI_stop_counters(values, num_events)))<PAPI_OK)
 			fprintf(stderr, "Error stopping PAPI Counters: Returns %d\n", retval);
 		printf("Acce: %lld\nMiss: %lld\nRate: %2.2f%%\n", 
@@ -202,6 +204,7 @@ int main( int argc, char *argv[] )
 			values[1],
 			(100.0*values[1])/values[0]
 			);
+		#endif
 		/* ----------** PAPI **----------
 		 */
 		  
@@ -237,8 +240,9 @@ int main( int argc, char *argv[] )
     return 0;
 }
 
-//first optimization
-
+/*	FIRST OPTIMIZATION
+ * One Jacobi iteration step
+ */
 double residual_jacobi_opt(double *u, double* utmp, unsigned sizex, unsigned sizey) {
 	unsigned i, j;
 	double unew, diff, sum = 0.0;
@@ -266,10 +270,10 @@ double residual_jacobi_opt(double *u, double* utmp, unsigned sizex, unsigned siz
 void relax_jacobi_opt(double *u, double *utmp, unsigned sizex, unsigned sizey) {
 	int i, j;
 	/*
-	ideas for optimization: 	- array padding (fewer conflict misses)
-								- go through rows instead of columns
-								- manual vectorization
-								- loop unrolling
+	ideas for optimization: - array padding (fewer conflict misses)
+							- go through rows instead of columns
+							- manual vectorization
+							- loop unrolling
 	 */
 	for (j = 1; j < sizex - 1; j++) {
 		for (i = 1; i < sizey - 1; i++) {
@@ -294,14 +298,14 @@ void relax_jacobi_opt(double *u, double *utmp, unsigned sizex, unsigned sizey) {
 	 */
 }
 
-/*
- * One Jacobi iteration step plus residual
+/*	SECOND OPTIMIZATION
+ * One Jacobi iteration step plus residual integrated
  */
 double relax_jacobi_plusresidual(double *u, double *utmp, unsigned sizex, unsigned sizey) {
 	int i, j;
 	double diff, sum = 0.0;
 	/*
-	idea for optimization: 	- array padding (less conflict misses)
+	ideas for optimization: - array padding (less conflict misses)
 							- go through rows instead of columns
 							- manual vectorization
 							- loop unrolling
