@@ -25,9 +25,10 @@ void usage( char *s )
     fprintf(stderr, 
 	    "Usage: %s <input file> [result file]\n\n", s);
 }
-void relax_jacobi_opt (double *u, double *utmp, unsigned sizex, unsigned sizey);
-double residual_jacobi_opt (double *u, double *utmp, unsigned sizex, unsigned sizey);
-double relax_jacobi_plusresidual (double *u, double *utmp, unsigned sizex, unsigned sizey);
+void relax_jacobi_optCA (double *u, double *utmp, unsigned sizex, unsigned sizey);
+double residual_jacobi_optCA (double *u, double *utmp, unsigned sizex, unsigned sizey);
+void relax_jacobi_optPS (double **u, double **utmp, unsigned sizex, unsigned sizey);
+double relax_jacobi_optAIO (double **u, double **utmp, unsigned sizex, unsigned sizey);
 
 int main( int argc, char *argv[] )
 {
@@ -166,13 +167,20 @@ int main( int argc, char *argv[] )
 					residual = residual_gauss( param.u, param.uhelp, np, np);
 					break;
 					
-				case 2: // JACOBI_OPT
-					relax_jacobi_opt(param.u, param.uhelp, np, np);
-					residual= residual_jacobi_opt (param.u, param.uhelp, np, np);
+				case 2: // JACOBI_OPT_cacheAligned
+					relax_jacobi_optCA(param.u, param.uhelp, np, np);
+					residual = residual_jacobi_optCA (param.u, param.uhelp, np, np);
 					break;
 					
-				case 3: // JACOBI_OPT_integratedResidual
-					residual = relax_jacobi_plusresidual (param.u, param.uhelp, np, np);
+				case 3: // JACOBI_OPT_wPointerSwap
+					relax_jacobi_optPS(&(param.u), &(param.uhelp), np, np);
+					residual = residual_jacobi_optCA (param.u, param.uhelp, np, np);
+					break;
+					
+				case 4: // JACOBI_OPT_AIO
+					residual = relax_jacobi_optAIO (&(param.u), &(param.uhelp), np, np);
+					break;
+					
 			}
 			iter++;
 			
@@ -243,22 +251,21 @@ int main( int argc, char *argv[] )
 /*	FIRST OPTIMIZATION
  * One Jacobi iteration step
  */
-double residual_jacobi_opt(double *u, double* utmp, unsigned sizex, unsigned sizey) {
+double residual_jacobi_optCA(double *u, double *utmp, unsigned sizex, unsigned sizey) {
 	unsigned i, j;
 	double unew, diff, sum = 0.0;
 	//ideas for optimization: 	- go through rows instead of columns
-	//							- instead of recomputing unew, compare u to utmp
+	//							- instead of recomputing unew, compare u to utmp -> reuse result from previous relaxation
 	//							- vectorization
-	for (j = 1; j < sizex - 1; j++) {
-		for (i = 1; i < sizey - 1; i++) {
-/*
+	for (i = 1; i < sizey - 1; i++) {
+		for (j = 1; j < sizex - 1; j++) {
 			unew = 0.25 * (u[i + (j - 1)*sizey] +  // left
 						u[i + (j + 1)*sizey] +  // right
 						u[(i - 1) + j*sizey] +  // top
 						u[(i + 1) + j*sizey]); // bottom
 
 			diff = unew - u[i * sizex + j];
-*/			diff = utmp[i+j*sizey] - u[i+j*sizey];
+			//diff = utmp[i+j*sizey] - u[i+j*sizey];
 			sum += diff * diff;
 		}
 	}
@@ -266,8 +273,7 @@ double residual_jacobi_opt(double *u, double* utmp, unsigned sizex, unsigned siz
 	return sum;
 }
 
-
-void relax_jacobi_opt(double *u, double *utmp, unsigned sizex, unsigned sizey) {
+void relax_jacobi_optCA(double *u, double *utmp, unsigned sizex, unsigned sizey) {
 	int i, j;
 	/*
 	ideas for optimization: - array padding (fewer conflict misses)
@@ -275,8 +281,8 @@ void relax_jacobi_opt(double *u, double *utmp, unsigned sizex, unsigned sizey) {
 							- manual vectorization
 							- loop unrolling
 	 */
-	for (j = 1; j < sizex - 1; j++) {
-		for (i = 1; i < sizey - 1; i++) {
+	for (i = 1; i < sizey - 1; i++) {
+		for (j = 1; j < sizex - 1; j++) {
 			utmp[i + j * sizey] = 0.25 * (u[i + (j - 1)*sizey] +  // left
 						u[i + (j + 1)*sizey] +  // right
 						u[(i - 1) + j*sizey] +  // top
@@ -284,48 +290,88 @@ void relax_jacobi_opt(double *u, double *utmp, unsigned sizex, unsigned sizey) {
 		}
 	}
 	
-	double* temp = u;
-	u = utmp;
-	utmp = temp;
 	// copy from utmp to u
 	// idea for optimization: - instead of copying from utmp to u, just swap the pointers
-	/*
-	for (j = 1; j < sizex - 1; j++) {
-		for (i = 1; i < sizey - 1; i++) {
+	for (i = 1; i < sizey - 1; i++) {
+		for (j = 1; j < sizex - 1; j++) {
 			u[i * sizex + j] = utmp[i * sizex + j];
 		}
 	}
-	 */
 }
 
 /*	SECOND OPTIMIZATION
- * One Jacobi iteration step plus residual integrated
+ * One Jacobi iteration step, but swapping array pointers instead of copying contents
+ * 		
+ *		NOTE!!!: Residuals are wrong after pointers have been swapped, 
+ * 		we do not understand why. The pointer swap should be 
+ * 		semantically correct we believe.
  */
-double relax_jacobi_plusresidual(double *u, double *utmp, unsigned sizex, unsigned sizey) {
+void relax_jacobi_optPS(double **u, double **utmp, unsigned sizex, unsigned sizey) {
 	int i, j;
-	double diff, sum = 0.0;
 	/*
-	ideas for optimization: - array padding (less conflict misses)
+	ideas for optimization: - array padding (fewer conflict misses)
 							- go through rows instead of columns
 							- manual vectorization
 							- loop unrolling
 	 */
-	for (j = 1; j < sizex - 1; j++) {
-		for (i = 1; i < sizey - 1; i++) {
-			utmp[i + j * sizey] = 0.25 * (u[i + (j - 1) * sizey] +  // left
-						u[i + (j + 1) * sizey] +  // right
-						u[(i - 1) + j * sizey] +  // top
-						u[(i + 1) + j * sizey]); // bottom
-						
-			diff = utmp[i + j * sizey] - u[i + j * sizey];
+	double *a, *atmp;
+	a = *u;
+	atmp = *utmp;
+	
+	for (i = 1; i < sizey - 1; i++) {
+		for (j = 1; j < sizex - 1; j++) {
+			atmp[i * sizex + j] = 0.25 * (a[i * sizex + (j - 1)] +  // left reeeeeeeeeeeeee
+						a[i * sizex + (j + 1)] +  // right
+						a[(i - 1) * sizex + j] +  // top
+						a[(i + 1) * sizex + j]); // bottom
+		}
+	}
+	
+	// optimization: instead of copying from utmp to u, just swap the pointers
+	double *temp = *u;
+	*u = *utmp;
+	*utmp = temp;
+}
+
+/*	THIRD OPTIMIZATION
+ * One Jacobi iteration step plus residual integrated / All in one
+ * 		
+ *		NOTE!!!: Residuals are wrong after pointers have been swapped, 
+ * 		we do not understand why. The pointer swap should be 
+ * 		semantically correct we believe.
+ */
+double relax_jacobi_optAIO(double **u, double **utmp, unsigned sizex, unsigned sizey) {
+	int i, j;
+	double diff, sum = 0.0;
+	/*
+	ideas for optimization: - array padding (fewer conflict misses)
+							- go through rows instead of columns
+							- manual vectorization
+							- loop unrolling
+	 */ 
+	double *a, *atmp;
+	a = *u;
+	atmp = *utmp;
+	
+	for (i = 1; i < sizey - 1; i++) {
+		for (j = 1; j < sizex - 1; j++) {
+						a[i * sizex + (j + 1)] +  // right
+						a[(i - 1) * sizex + j] +  // top
+						a[(i + 1) * sizex + j]); // bottom
+			
+			/* Do residual calculation right inside the relaxation loop.
+			 * Drawback: technically this returns the residual for timestep t,
+			 * while the relaxation advanced to t+1 already, no?
+			 */
+			diff = atmp[i * sizex + j] - a[i * sizex + j];
 			sum += diff * diff;
 		}
 	}
 	
 	// optimization: instead of copying from utmp to u, just swap the pointers
-	double* temp = u;
-	u = utmp;
-	utmp = temp;
-
+	double *temp = *u;
+	*u = *utmp;
+	*utmp = temp;
+	
 	return sum;
 }
