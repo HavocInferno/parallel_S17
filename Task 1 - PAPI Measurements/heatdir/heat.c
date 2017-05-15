@@ -6,7 +6,7 @@
 
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h>	
 
 #include "input.h"
 #include "heat.h"
@@ -18,7 +18,7 @@
 PAPI_MODE_FLOPS = flops measuring mode, 
 PAPI_MODE_CACHE = cache measuring mode
  */
-#define PAPI_MODE_CACHE
+#define PAPI_MODE_FLOPS
 
 void usage( char *s )
 {
@@ -29,6 +29,7 @@ void relax_jacobi_optCA (double *u, double *utmp, unsigned sizex, unsigned sizey
 double residual_jacobi_optCA (double *u, double *utmp, unsigned sizex, unsigned sizey);
 void relax_jacobi_optPS (double **u, double **utmp, unsigned sizex, unsigned sizey);
 double relax_jacobi_optAIO (double **u, double **utmp, unsigned sizex, unsigned sizey);
+double relax_jacobi_optAIO_tiled(double **u, double **utmp, unsigned sizex, unsigned sizey);
 void arraySwap(double** a, double** b, int sizex, int sizey);
 
 int main( int argc, char *argv[] )
@@ -123,7 +124,15 @@ int main( int argc, char *argv[] )
 		  
 		iter = 0;
 
-
+		/* IMPORTANT - initialize uhelp with the data from u, 
+		so we can swap pointers without having to manually 
+		fix the border values each iteration */
+		for (i = 0; i < np; i++) {
+			for (j = 0; j < np; j++) {
+				(param.uhelp)[i * np + j] = (param.u)[i * np + j];
+			}
+		}
+		
 		/* ----------** PAPI **----------
 		 */
 		/*
@@ -179,7 +188,7 @@ int main( int argc, char *argv[] )
 					break;
 					
 				case 4: // JACOBI_OPT_AIO
-					if(iter==0) {
+					if(iter==0) 
 					  relax_jacobi_optCA(param.u, param.uhelp, np, np);
 					  /*
 					  for (i = 1; i < np - 1; i++) {
@@ -187,8 +196,21 @@ int main( int argc, char *argv[] )
 								(param.uhelp)[i * np + j] = (param.u)[i * np + j];
 							}
 							}*/
-						}
+						//}
 					residual = relax_jacobi_optAIO (&(param.u), &(param.uhelp), np, np);
+					break;
+					
+				case 5: // JACOBI_OPT_AIO_tiling
+				        if(iter==0) 
+					  relax_jacobi_optCA(param.u, param.uhelp, np, np);
+					  /*
+					  for (i = 1; i < np - 1; i++) {
+							for (j = 1; j < np - 1; j++) {
+								(param.uhelp)[i * np + j] = (param.u)[i * np + j];
+							}
+							}*/
+						//}
+					residual = relax_jacobi_optAIO_tiled (&(param.u), &(param.uhelp), np, np);
 					break;
 					
 			}
@@ -217,11 +239,9 @@ int main( int argc, char *argv[] )
 		/* output of Cache counters */
 		if (((PAPI_stop_counters(values, num_events)))<PAPI_OK)
 			fprintf(stderr, "Error stopping PAPI Counters: Returns %d\n", retval);
-		printf("%5d %1.4f\n", 
-		       //values[0], 
-		       //values[1],
+		printf("%5d %0.4f\n", 
 		       param.act_res,
-		       (1.0*values[1])/values[0]
+			(1.0*values[1])/values[0]
 			);
 		#endif
 		/* ----------** PAPI **----------
@@ -309,9 +329,6 @@ void relax_jacobi_optCA(double *u, double *utmp, unsigned sizex, unsigned sizey)
 /*	SECOND OPTIMIZATION
  * One Jacobi iteration step, but swapping array pointers instead of copying contents
  * 		
- *		NOTE!!!: Residuals are wrong after pointers have been swapped, 
- * 		we do not understand why. The pointer swap should be 
- * 		semantically correct we believe.
  */
 void relax_jacobi_optPS(double **u, double **utmp, unsigned sizex, unsigned sizey) {
 	int i, j;
@@ -343,9 +360,6 @@ void relax_jacobi_optPS(double **u, double **utmp, unsigned sizex, unsigned size
 /*	THIRD OPTIMIZATION
  * One Jacobi iteration step plus residual integrated / All in one
  * 		
- *		NOTE!!!: Residuals are wrong after pointers have been swapped, 
- * 		we do not understand why. The pointer swap should be 
- * 		semantically correct we believe.
  */
 double relax_jacobi_optAIO(double **u, double **utmp, unsigned sizex, unsigned sizey) {
 	int i, j;
@@ -390,18 +404,71 @@ double relax_jacobi_optAIO(double **u, double **utmp, unsigned sizex, unsigned s
 	return sum;
 }
 
-void arraySwap(double** a, double** b, int sizex, int sizey) {
-	int i,j;
+/*	FOURTH OPTIMIZATION
+ * One Jacobi iteration step plus residual integrated / All in one
+ * with tiled computation
+ * 		
+ */
+double relax_jacobi_optAIO_tiled(double **u, double **utmp, unsigned sizex, unsigned sizey) {
+	int i, j;
+	double diff, sum = 0.0;
+	/*
+	ideas for optimization: - array padding (fewer conflict misses)
+							- go through rows instead of columns
+							- manual vectorization
+							- loop unrolling
+	 */ 
+	 
+	// optimization: instead of copying from utmp to u, just swap the pointers
+	/* 
+	 *	SWAP 
+	 */
+	arraySwap(u,utmp, sizex, sizey);
 	
+	
+	/*
+	 * RESIDUAL (+ RELAXATION)
+	 */
+	double *a, *atmp;
+	a = *u;
+	atmp = *utmp;
+	int tilex, tiley;
+	int tilesize = 7998;
+	for (tiley = 1; tiley < sizey-1; tiley += tilesize){
+		for (tilex = 1; tilex < sizex-1; tilex += tilesize){
+			for (i = tiley; (i < sizey - 1) && (i < tiley+tilesize); i++) {
+				for (j = tilex; (j < sizex - 1) && (j < tilex+tilesize); j++) {
+					atmp[i * sizex + j] = 0.25 * (a[i * sizex + (j - 1)] +  // left
+								a[i * sizex + (j + 1)] +  // right
+								a[(i - 1) * sizex + j] +  // top
+								a[(i + 1) * sizex + j]); // bottom
+					
+					/* Do residual calculation right inside the relaxation loop.
+					 * Drawback: technically this returns the residual for timestep t,
+					 * while the relaxation advanced to t+1 already, no?
+					 */
+					diff = atmp[i * sizex + j] - a[i * sizex + j];
+					sum += diff * diff;
+				}
+			}
+		}
+	}
+	
+	return sum;
+}
+
+void arraySwap(double** a, double** b, int sizex, int sizey) {
+	/*
+	int i,j;
+
 	for (i = 1; i < sizey - 1; i++) {
 		for (j = 1; j < sizex - 1; j++) {
 			(*a)[i * sizex + j] = (*b)[i * sizex + j];
 		}
 	}
+	 */
 	
-	/*
-	int64_t temp = *a;
+	double *temp = *a;
 	*a = *b;
 	*b = temp;
-	*/
 }
