@@ -188,8 +188,8 @@ int main( int argc, char *argv[] )
 					break;
 					
 				case 4: // JACOBI_OPT_AIO
-					//if(iter==0) {
-					  //relax_jacobi_optCA(param.u, param.uhelp, np, np);
+					if(iter==0) 
+					  relax_jacobi_optCA(param.u, param.uhelp, np, np);
 					  /*
 					  for (i = 1; i < np - 1; i++) {
 							for (j = 1; j < np - 1; j++) {
@@ -201,8 +201,8 @@ int main( int argc, char *argv[] )
 					break;
 					
 				case 5: // JACOBI_OPT_AIO_tiling
-					//if(iter==0) {
-					  //relax_jacobi_optCA(param.u, param.uhelp, np, np);
+				        if(iter==0) 
+					  relax_jacobi_optCA(param.u, param.uhelp, np, np);
 					  /*
 					  for (i = 1; i < np - 1; i++) {
 							for (j = 1; j < np - 1; j++) {
