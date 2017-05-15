@@ -201,7 +201,7 @@ int main( int argc, char *argv[] )
 					break;
 					
 				case 5: // JACOBI_OPT_AIO_tiling
-				        if(iter==0) 
+				    if(iter==0) 
 					  relax_jacobi_optCA(param.u, param.uhelp, np, np);
 					  /*
 					  for (i = 1; i < np - 1; i++) {
@@ -322,8 +322,12 @@ void relax_jacobi_optCA(double *u, double *utmp, unsigned sizex, unsigned sizey)
 	}
 	
 	// copy from utmp to u
-	// idea for optimization: - instead of copying from utmp to u, just swap the pointers
-	arraySwap(&u, &utmp, sizex, sizey);
+	//optimization: cache aligned loops
+	for (i = 1; i < sizey - 1; i++) {
+		for (j = 1; j < sizex - 1; j++) {
+			u[i * sizex + j] = utmp[i * sizex + j];
+		}
+	}
 }
 
 /*	SECOND OPTIMIZATION

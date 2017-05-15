@@ -1,0 +1,8 @@
+5      # iterations
+200    # initial resolution
+10200   # max resolution (spatial resolution)
+1000   # resolution step size
+4      # Algorithm 0=Jacobi 1=Gauss 2=J_cacheAligned 3=J_pointerSwap 4=J_AIO 5=J_AIOtiled
+2                     # number of heat sources
+0.0  0.0  1.0  1.0    # (x,y), size temperature
+1.0  1.0  1.0  0.5 
