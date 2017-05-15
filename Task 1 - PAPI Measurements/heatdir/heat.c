@@ -330,9 +330,6 @@ void relax_jacobi_optCA(double *u, double *utmp, unsigned sizex, unsigned sizey)
 /*	SECOND OPTIMIZATION
  * One Jacobi iteration step, but swapping array pointers instead of copying contents
  * 		
- *		NOTE!!!: Residuals are wrong after pointers have been swapped, 
- * 		we do not understand why. The pointer swap should be 
- * 		semantically correct we believe.
  */
 void relax_jacobi_optPS(double **u, double **utmp, unsigned sizex, unsigned sizey) {
 	int i, j;
@@ -364,9 +361,6 @@ void relax_jacobi_optPS(double **u, double **utmp, unsigned sizex, unsigned size
 /*	THIRD OPTIMIZATION
  * One Jacobi iteration step plus residual integrated / All in one
  * 		
- *		NOTE!!!: Residuals are wrong after pointers have been swapped, 
- * 		we do not understand why. The pointer swap should be 
- * 		semantically correct we believe.
  */
 double relax_jacobi_optAIO(double **u, double **utmp, unsigned sizex, unsigned sizey) {
 	int i, j;
@@ -415,9 +409,6 @@ double relax_jacobi_optAIO(double **u, double **utmp, unsigned sizex, unsigned s
  * One Jacobi iteration step plus residual integrated / All in one
  * with tiled computation
  * 		
- *		NOTE!!!: Residuals are wrong after pointers have been swapped, 
- * 		we do not understand why. The pointer swap should be 
- * 		semantically correct we believe.
  */
 double relax_jacobi_optAIO_tiled(double **u, double **utmp, unsigned sizex, unsigned sizey) {
 	int i, j;
