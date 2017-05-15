@@ -124,7 +124,15 @@ int main( int argc, char *argv[] )
 		  
 		iter = 0;
 
-
+		/* IMPORTANT - initialize uhelp with the data from u, 
+		so we can swap pointers without having to manually 
+		fix the border values each iteration */
+		for (i = 0; i < np; i++) {
+			for (j = 0; j < np; j++) {
+				(param.uhelp)[i * np + j] = (param.u)[i * np + j];
+			}
+		}
+		
 		/* ----------** PAPI **----------
 		 */
 		/*
@@ -180,28 +188,28 @@ int main( int argc, char *argv[] )
 					break;
 					
 				case 4: // JACOBI_OPT_AIO
-					if(iter==0) {
-					  relax_jacobi_optCA(param.u, param.uhelp, np, np);
+					//if(iter==0) {
+					  //relax_jacobi_optCA(param.u, param.uhelp, np, np);
 					  /*
 					  for (i = 1; i < np - 1; i++) {
 							for (j = 1; j < np - 1; j++) {
 								(param.uhelp)[i * np + j] = (param.u)[i * np + j];
 							}
 							}*/
-						}
+						//}
 					residual = relax_jacobi_optAIO (&(param.u), &(param.uhelp), np, np);
 					break;
 					
 				case 5: // JACOBI_OPT_AIO_tiling
-					if(iter==0) {
-					  relax_jacobi_optCA(param.u, param.uhelp, np, np);
+					//if(iter==0) {
+					  //relax_jacobi_optCA(param.u, param.uhelp, np, np);
 					  /*
 					  for (i = 1; i < np - 1; i++) {
 							for (j = 1; j < np - 1; j++) {
 								(param.uhelp)[i * np + j] = (param.u)[i * np + j];
 							}
 							}*/
-						}
+						//}
 					residual = relax_jacobi_optAIO_tiled (&(param.u), &(param.uhelp), np, np);
 					break;
 					
@@ -403,6 +411,14 @@ double relax_jacobi_optAIO(double **u, double **utmp, unsigned sizex, unsigned s
 	return sum;
 }
 
+/*	FOURTH OPTIMIZATION
+ * One Jacobi iteration step plus residual integrated / All in one
+ * with tiled computation
+ * 		
+ *		NOTE!!!: Residuals are wrong after pointers have been swapped, 
+ * 		we do not understand why. The pointer swap should be 
+ * 		semantically correct we believe.
+ */
 double relax_jacobi_optAIO_tiled(double **u, double **utmp, unsigned sizex, unsigned sizey) {
 	int i, j;
 	double diff, sum = 0.0;
@@ -452,6 +468,7 @@ double relax_jacobi_optAIO_tiled(double **u, double **utmp, unsigned sizex, unsi
 }
 
 void arraySwap(double** a, double** b, int sizex, int sizey) {
+	/*
 	int i,j;
 
 	for (i = 1; i < sizey - 1; i++) {
@@ -459,10 +476,9 @@ void arraySwap(double** a, double** b, int sizex, int sizey) {
 			(*a)[i * sizex + j] = (*b)[i * sizex + j];
 		}
 	}
-
-	/*
-	double *temp = *u;
-	*u = *utmp;
-	*utmp = temp;
-	*/
+	 */
+	
+	double *temp = *a;
+	*a = *b;
+	*b = temp;
 }
