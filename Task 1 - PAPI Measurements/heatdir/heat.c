@@ -6,7 +6,7 @@
 
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h>	
 
 #include "input.h"
 #include "heat.h"
@@ -29,6 +29,7 @@ void relax_jacobi_optCA (double *u, double *utmp, unsigned sizex, unsigned sizey
 double residual_jacobi_optCA (double *u, double *utmp, unsigned sizex, unsigned sizey);
 void relax_jacobi_optPS (double **u, double **utmp, unsigned sizex, unsigned sizey);
 double relax_jacobi_optAIO (double **u, double **utmp, unsigned sizex, unsigned sizey);
+double relax_jacobi_optAIO_tiled(double **u, double **utmp, unsigned sizex, unsigned sizey);
 void arraySwap(double** a, double** b, int sizex, int sizey);
 
 int main( int argc, char *argv[] )
@@ -189,6 +190,19 @@ int main( int argc, char *argv[] )
 							}*/
 						}
 					residual = relax_jacobi_optAIO (&(param.u), &(param.uhelp), np, np);
+					break;
+					
+				case 5: // JACOBI_OPT_AIO_tiling
+					if(iter==0) {
+					  relax_jacobi_optCA(param.u, param.uhelp, np, np);
+					  /*
+					  for (i = 1; i < np - 1; i++) {
+							for (j = 1; j < np - 1; j++) {
+								(param.uhelp)[i * np + j] = (param.u)[i * np + j];
+							}
+							}*/
+						}
+					residual = relax_jacobi_optAIO_tiled (&(param.u), &(param.uhelp), np, np);
 					break;
 					
 			}
@@ -383,6 +397,54 @@ double relax_jacobi_optAIO(double **u, double **utmp, unsigned sizex, unsigned s
 			 */
 			diff = atmp[i * sizex + j] - a[i * sizex + j];
 			sum += diff * diff;
+		}
+	}
+	
+	return sum;
+}
+
+double relax_jacobi_optAIO_tiled(double **u, double **utmp, unsigned sizex, unsigned sizey) {
+	int i, j;
+	double diff, sum = 0.0;
+	/*
+	ideas for optimization: - array padding (fewer conflict misses)
+							- go through rows instead of columns
+							- manual vectorization
+							- loop unrolling
+	 */ 
+	 
+	// optimization: instead of copying from utmp to u, just swap the pointers
+	/* 
+	 *	SWAP 
+	 */
+	arraySwap(u,utmp, sizex, sizey);
+	
+	
+	/*
+	 * RESIDUAL (+ RELAXATION)
+	 */
+	double *a, *atmp;
+	a = *u;
+	atmp = *utmp;
+	int tilex, tiley;
+	int tilesize = 7998;
+	for (tiley = 1; tiley < sizey-1; tiley += tilesize){
+		for (tilex = 1; tilex < sizex-1; tilex += tilesize){
+			for (i = tiley; (i < sizey - 1) && (i < tiley+tilesize); i++) {
+				for (j = tilex; (j < sizex - 1) && (j < tilex+tilesize); j++) {
+					atmp[i * sizex + j] = 0.25 * (a[i * sizex + (j - 1)] +  // left
+								a[i * sizex + (j + 1)] +  // right
+								a[(i - 1) * sizex + j] +  // top
+								a[(i + 1) * sizex + j]); // bottom
+					
+					/* Do residual calculation right inside the relaxation loop.
+					 * Drawback: technically this returns the residual for timestep t,
+					 * while the relaxation advanced to t+1 already, no?
+					 */
+					diff = atmp[i * sizex + j] - a[i * sizex + j];
+					sum += diff * diff;
+				}
+			}
 		}
 	}
 	
