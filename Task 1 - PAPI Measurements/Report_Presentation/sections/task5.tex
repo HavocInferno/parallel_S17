@@ -3,8 +3,8 @@
 \frametitle{Sequential Optimization: Matrix Access}
 \textbf{Access patterns into the Matrix}
 \begin {itemize}
-\item Before Optimization: row wise access in relax\_jacobi
-\item low spacial locality
+\item Before Optimization: column wise access in relax\_jacobi
+\item low spatial locality
 
 \begin{lstlisting}
 for (j = 1; j < sizex - 1; j++) {
@@ -26,7 +26,7 @@ for (j = 1; j < sizex - 1; j++) {
 \begin{frame}[fragile]
 \frametitle{Sequential Optimization: Matrix Access}
 \begin {itemize}
-\item{Solution: change loop, column wise access }
+\item{Solution: change loop, row wise access }
 \begin{lstlisting}
 for (j = 1; j < sizex - 1; j++) {
 	for (i = 1; i < sizey - 1; i++) {
@@ -139,7 +139,7 @@ for (j = 1; j < sizex - 1; j++) {
 \frametitle{Sequential Optimization: Residual}
 \begin {itemize}
 
-\item Second Idea: Compute residual directly while relaxing
+\item Second Idea: Compute relaxation directly with residual and save for later
 \begin{lstlisting}
 for (i = 1; i < sizey - 1; i++) {
 	for (j = 1; j < sizex - 1; j++) {
@@ -160,24 +160,51 @@ return sum;
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{Task 2: Sequential Optimization}
-\begin {itemize}
+\frametitle{Sequential Optimization: Interleaving}
 
-\item Cache optimization by interleaving of iterations: tiling and wavefront
+
+\textbf{Cache optimization by interleaving of iterations: tiling and wavefront}
+\begin {itemize}
 \item Due to the spatial dependencies between the grid points, tiling and wavefront become non-trivial
 \item Traditional tiling would yield wrong/old values at the borders
-\item Due to the already sequential access pattern, wavefront interleaving is not expected to give a significant improval of cache behaviour in a non-parallel environment
+\item Idea: Tile grid and compute one iteration on tiles
+\item However: Due to the already sequential access pattern, wavefront interleaving is not expected to give a significant improval of cache behaviour in a non-parallel environment
 
 \end {itemize}
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{Task 2: Sequential Optimization}
+\frametitle{Sequential Optimization: Interleaving}
 
- There is a performance issue around sizes of powers of 2, e.g. np=1020/1022/1024/1026. Can you explain it? How to get rid of that issue?
- 
- When using array sizes of powers of two, the entries above and below will have similar least significant bits, this will cause them to be put into the same cache set. Hence, conflict misses will become more probable.
- A way to get rid of this problem is array padding, so padding the arrays with a couple more entries, so that the least significant bits of neighboring cachelines differ, therefore reducing conflict misses.
+\begin {itemize}
+\item Tiling Solution:
+
+\begin{lstlisting}
+for (tiley = 1; tiley < sizey-1; tiley += tilesize){
+	for (tilex = 1; tilex < sizex-1; tilex += tilesize){
+		for (i = tiley; (i < sizey - 1) && (i < tiley+tilesize); i++) {
+			for (j = tilex; (j < sizex - 1) && (j < tilex+tilesize); j++) {
+				atmp[i * sizex + j] = ...
+			}
+		}
+	}
+}
+\end{lstlisting}
+\end {itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Task 2.2: Power of Two}
+
+\textbf{ There is a performance issue around sizes of powers of 2, e.g. np=1020/1022/1024/1026.}
+\begin {itemize}
+\item Can you explain it? 
+\item How to get rid of that issue?
+\end {itemize}
+
+When using array sizes of powers of two, the entries above and below will have similar least significant bits, this will cause them to be put into the same cache set. Hence, conflict misses will become more probable.
+
+A way to get rid of this problem is array padding, so padding the arrays with a couple more entries, so that the least significant bits of neighboring cachelines differ, therefore reducing conflict misses.
 
 
 \end{frame}
