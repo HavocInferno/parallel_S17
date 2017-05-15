@@ -1,0 +1,145 @@
+\section{Task 1.2}
+\begin{frame}
+\frametitle{Task 1.2 Compiler Options}
+\begin{itemize}
+\item What is the meaning of -ipo and -fno-alias
+\item What is the meaning of ``ivdep"?
+\item The Intel compiler provides reports when using ``opt-report" option. What does it print out, and what does it mean?
+\item Is the code vectorized by the compiler?
+\item What is the performance result of these options. Present a graph!
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Task 1.2 Compiler Options}
+\begin{itemize}
+\item -ipo: 
+\begin {itemize}
+\item ``Interprocedurial Optimization" 
+\item analyzes the code and applies various (e.g. inlining)
+\item full list can be found at \url{https://software.intel.com/en-us/node/522667}
+\end{itemize}
+\item -fno-alias
+\begin{itemize}
+\item forces compiler to assume no aliasing
+\item aliasing: accessing one memory cell through different symbolic names
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Task 1.2 Compiler Options}
+\begin{itemize}
+\item ivdep: 
+\begin{itemize}
+\item ``ignore vector dependencies"
+\item pragma to be inserted into code
+\item compiler might assume a loop non vectorizable
+\item \#pragma ivdep tells compiler that there is no dependency
+\item \begin{lstlisting}
+void ignore_vec_dep(int *a, int k, int c, int m) { 
+	#pragma ivdep
+	for (int i = 0; i < m; i++)
+		a[i] = a[i + k] * c;
+}
+\end{lstlisting}
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Task 1.2 Compiler Options}
+\begin{itemize}
+\item opt-report
+\begin{itemize}
+\item optimization reports by the compiler
+\item show which part of the code was optimized
+\item for not optimized parts, also shows the reason why it could not be optimized
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Task 1.2 Compiler Options}
+\begin{lstlisting}
+Begin optimization report for: relax_jacobi(double *, double *, unsigned int, unsigned int) 
+	Report from: Interprocedural optimizations [ipo] 
+INLINE REPORT: (relax_jacobi(double *, double *, unsigned int, unsigned int)) [2] relax_jacobi.c(43,1)
+	Report from: Loop nest, Vector & Auto-parallelization optimizations [loop, vec, par]
+LOOP BEGIN at relax_jacobi.c(46,5)
+	remark #15344: loop was not vectorized: vector dependence prevents vectorization. First dependence is shown below. Use level 5 report for details 
+	remark #15346: vector dependence: assumed OUTPUT dependence between utmp line 50 and utmp line 50 
+LOOP END
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Task 1.2 Compiler Options}
+\begin{itemize}
+\item Is the code vectorized by the compiler?
+\begin{itemize}
+\item Only the inner part of residual\_jacobi is vectorized
+\item \begin{lstlisting}
+Begin optimization report for: residual_jacobi(double *, unsigned int, unsigned int)
+    Report from: Interprocedural optimizations [ipo]
+LOOP BEGIN at relax_jacobi.c(20,5)
+   remark #15542: loop was not vectorized: inner loop was already vectorized
+
+   LOOP BEGIN at relax_jacobi.c(22,2)
+      remark #15300: LOOP WAS VECTORIZED
+   LOOP END
+
+   LOOP BEGIN at relax_jacobi.c(22,2)
+   <Remainder loop for vectorization>
+   LOOP END
+LOOP END
+\end{lstlisting}
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Task 1.2 Compiler Options}
+	\begin{tikzpicture}
+		\begin{axis}[
+			xlabel=resolution,
+			ylabel=MFlop/s,
+			title=Performance of Jacobi-Relaxation with various compiler options,
+			legend pos = outer north east,
+			no markers]
+			\addplot table {plots/jacobi/perf_O0.dat};.
+			\addplot table {plots/jacobi/perf_O1.dat};.
+			\addplot table {plots/jacobi/perf_O2.dat};.
+			\addplot table {plots/jacobi/perf_O3.dat};.
+			\addplot table {plots/jacobi/perf_O3_ipo.dat};.
+			\addplot table {plots/jacobi/perf_O3_xhost.dat};.
+			\addplot table {plots/jacobi/perf_fast.dat};.
+			\addplot table {plots/jacobi/perf_fast_xhost.dat};.
+			\legend{-O0, -O1, -O2, -O3, -O3 -ipo, -O3 -xhost, -fast, -fast -xhost}
+		\end{axis}
+	\end{tikzpicture}
+\end{frame}
+
+\begin{frame}
+\frametitle{Task 1.2 Compiler Options}
+	\begin{tikzpicture}
+		\begin{axis}[
+			xlabel=resolution,
+			ylabel=MFlop/s,
+			title=Performance of GS-Relaxation with various compiler options,
+			legend pos = outer north east,
+			no markers]
+			\addplot table {plots/gs/perf_O0.dat};.
+			\addplot table {plots/gs/perf_O1.dat};.
+			\addplot table {plots/gs/perf_O2.dat};.
+			\addplot table {plots/gs/perf_O3.dat};.
+			\addplot table {plots/gs/perf_O3_ipo.dat};.
+			\addplot table {plots/gs/perf_O3_xhost.dat};.
+			\addplot table {plots/gs/perf_fast.dat};.
+			\addplot table {plots/gs/perf_fast_xhost.dat};.
+			\legend{-O0, -O1, -O2, -O3, -O3 -ipo, -O3 -xhost, -fast, -fast -xhost}
+		\end{axis}
+	\end{tikzpicture}
+\end{frame}
+

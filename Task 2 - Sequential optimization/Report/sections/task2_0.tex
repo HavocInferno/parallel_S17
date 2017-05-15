@@ -1,0 +1,57 @@
+\section{Task 2.1}
+\begin{frame}
+\frametitle{Task 2.1 Sequential optimization - MFlop/s}
+	\begin{tikzpicture}
+		\begin{axis}[
+			legend style={cells={align=left}},
+			xlabel=resolution,
+			ylabel=(PAPI) MFlop/s,
+			title=Performance of Jacobi with various optimization steps (all -O2),
+			legend pos = outer north east,
+			no markers]
+			\addplot[color=red] table {plots/jacobi_v2/0_va_flops.dat};.
+			\addplot[color=green] table {plots/jacobi_v2/2_ca_flops.dat};.
+			\addplot[color=blue] table {plots/jacobi_v2/3_ps_flops.dat};.
+			\addplot[color=magenta] table {plots/jacobi_v2/4_aio_flops.dat};.
+			\addplot[color=cyan] table {plots/jacobi_v2/5_tile_flops.dat};.
+			\legend{-vanilla, -cache\\ aligned, -pointer\\ swap, -all in one, -tiled}
+		\end{axis}
+	\end{tikzpicture}
+\end{frame}
+
+\begin{frame}
+\frametitle{Task 2.1 Sequential optimization - MFlop/s}
+	\begin{tikzpicture}
+		\begin{axis}[
+			legend style={cells={align=left}},
+			xlabel=resolution,
+			ylabel=(PAPI) MFlop/s,
+			title=PAPI vs hardcoded (iter x 11 flops x grid²),
+			legend pos = outer north east,
+			no markers]
+			\addplot[color=red] table {plots/jacobi_v2/4_aio_flops.dat};.
+			\addplot[color=green] table {plots/jacobi_v2/4_aio_hard_flops.dat};.
+			\legend{-PAPI, -hard}
+		\end{axis}
+	\end{tikzpicture}
+\end{frame}
+
+\begin{frame}
+\frametitle{Task 2.1 Sequential optimization - L2 Missrate}
+	\begin{tikzpicture}
+		\begin{axis}[
+			legend style={cells={align=left}},
+			xlabel=resolution,
+			ylabel=(PAPI) L2 Cache Missrate,
+			title=Performance of Jacobi with various optimization steps (all -O2),
+			legend pos = outer north east,
+			no markers]
+			\addplot[color=red] table {plots/jacobi_v2/0_va_cache.dat};.
+			\addplot[color=green] table {plots/jacobi_v2/2_ca_cache.dat};.
+			\addplot[color=blue] table {plots/jacobi_v2/3_ps_cache.dat};.
+			\addplot[color=magenta] table {plots/jacobi_v2/4_aio_cache.dat};.
+			\addplot[color=cyan] table {plots/jacobi_v2/5_tile_cache.dat};.
+			\legend{-vanilla, -cache\\ aligned, -pointer\\ swap, -all in one, -tiled}
+		\end{axis}
+	\end{tikzpicture}
+\end{frame}

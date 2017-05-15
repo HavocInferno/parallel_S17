@@ -1,0 +1,125 @@
+\section{Task 1 Compilter Optimizations}
+\begin{frame}
+\frametitle{Task 1.5 PAPI Measurements}
+\begin{itemize}
+\item 1. Report on the comparison of the MFlop rate based on the computation and the hardware counter measurements.
+\item 2. Run experiments for input.dat
+\item 3. Present a diagram comparing MFlops vs L2 accesses and L2 missrate for the above given different problem sizes. Another diagram comparing MFlops vs L3 cache accesses and L3 cache miss rate for the above given different problem sizes
+\item 4. Look up in the web information on measuring the floating point operations on Sandybridge. Explain your findings
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Task 1.5 PAPI Measurements}
+\framesubtitle{General notes on PAPI}
+\begin{itemize}
+\item papi\_avail -a to see available metrics
+\item papi\_command\_line event1 event2 to see if PAPI can measure event1 and event2 at same time
+\item use PAPI\_flops(float*, float*, long long*, float*) to measure flops
+\item for cache rates use PAPI\_start\_counters(int events[num\_events], num\_events)
+\item use event names from papi\_avail -a!
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Task 1.5 PAPI Measurements}
+\framesubtitle{Report on MFlop/s}
+\begin{itemize}
+\item for -O0: 153.87 MFlop/s measured by heat vs. 174.09 MFlop/s measured by PAPI
+\item for -O2: 449.06 MFlop/s measured by heat vs. 204.67 MFlop/s measured by PAPI
+\item numbers for no optimization very similar
+\item for optimized code, PAPI only measures actual Floating Point Operations
+\item reduces numbers of Flops for vectorized code
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Task 1.5 PAPI Measurements}
+\framesubtitle{Run experiments for input.dat}
+\begin{itemize}
+\item file not provided
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Task 1.5 PAPI Measurements}
+\framesubtitle{Diagrams on cache-rate with -O0}
+\begin{center}
+ \begin{tabular}{|r r r|} 
+ \hline
+Floprate & L2 Missrate & L3 Missrate \\ \hline\hline
+76.33 & 0.237467 & 0.000050 \\ \hline
+260.64 & 0.159132 & 0.324926 \\ \hline
+172.01 & 0.725293 & 0.132916 \\ \hline
+152.83 & 0.927210 & 0.105831 \\ \hline
+153.22 & 0.941412 & 0.082797 \\ \hline
+153.79 & 0.927790 & 0.105352 \\ \hline
+153.90 & 0.927858 & 0.105271 \\ \hline
+153.84 & 0.927837 & 0.105238 \\ \hline
+\end{tabular}
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{Task 1.5 PAPI Measurements}
+\framesubtitle{Diagrams on cache-rate with -O2}
+\begin{center}
+ \begin{tabular}{|r r r|} 
+ \hline
+Floprate & L2 Missrate & L3 Missrate \\ \hline\hline
+18.04 & 0.281038 & 0.000918 \\ \hline
+653.24 & 0.140577 & 0.347853 \\ \hline
+486.82 & 0.628271 & 0.158644 \\ \hline
+457.04 & 0.920676 & 0.108116 \\ \hline
+457.30 & 0.927515 & 0.105655 \\ \hline
+453.23 & 0.924995 & 0.106823 \\ \hline
+452.82 & 0.927477 & 0.106216 \\ \hline
+449.34 & 0.927658 & 0.106039 \\ \hline
+\end{tabular}
+\end{center}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Task 1.5 PAPI Measurements}
+\framesubtitle{Graph on Cacherate with O0}
+	\begin{tikzpicture}
+		\begin{axis}[
+			xlabel=resolution,
+			ylabel=Missrate,
+			title=Cache-Missrate with -O0,
+			legend pos = outer north east,
+			no markers]
+			\addplot table {plots/perfL2.dat};.
+			\addplot table {plots/perfL3.dat};.
+			\legend{L2-Missrate, L3-Missrate}
+		\end{axis}
+	\end{tikzpicture}
+\end{frame}
+
+\begin{frame}
+\frametitle{Task 1.5 PAPI Measurements}
+\framesubtitle{Graph on Cacherate with -O0}
+\begin{itemize}
+\item Very high L2-Missrate
+\item L3 Cache is big enough to avoid L3-Misses
+\item Still, performance suffers from this
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Task 1.5 PAPI Measurements}
+\framesubtitle{Flops on Sandybridge}
+\begin{itemize}
+\item Sandybridge has 3 fixed counters for core cycles, reference cycles and core instructions executed
+\item 8 programmable counters, for example for Cacherates, Flops...
+\item Sandybridge supports Hyperthreading, so just 4 programmable counters for threads
+\item Sandybridge supports various types of Flops: AVX, SSE, ...
+\item No guarantee that AVX Flop actually uses 256 bit
+\item Needs 8 counters just to count Flops
+\item \url{http://icl.cs.utk.edu/projects/papi/wiki/PAPITopics:SandyFlops}
+\end{itemize}
+\end{frame}
