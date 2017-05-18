@@ -99,7 +99,7 @@ void arraySwap(double** a, double** b, int sizex, int sizey) {
 
 \textbf{Calculation of Residuum}
 \begin {itemize}
-\item Before Optimization: For residual at timestep t, compute entire relaxation of timestep t+1
+\item Before Optimization: For residual at timestep t, recompute entire relaxation of timestep t+1
 \begin{lstlisting}
 for (j = 1; j < sizex - 1; j++) {
 	for (i = 1; i < sizey - 1; i++) {
@@ -122,16 +122,17 @@ for (j = 1; j < sizex - 1; j++) {
 \frametitle{Sequential Optimization: Residual}
 \begin {itemize}
 
-\item Idea: Save results of previous timestep to compute residual
-\begin{lstlisting}
-for (j = 1; j < sizex - 1; j++) {
-	for (i = 1; i < sizey - 1; i++) {
-		diff = utmp[i+j*sizey] - u[i+j*sizey];
-		sum += diff * diff;
-	}
-}
-\end{lstlisting}
-
+\item Idea: Use results of previous timestep to compute residual
+%\begin{lstlisting}
+%for (j = 1; j < sizex - 1; j++) {
+%	for (i = 1; i < sizey - 1; i++) {
+%		diff = utmp[i+j*sizey] - u[i+j*sizey];
+%		sum += diff * diff;
+%	}
+%}
+%\end{lstlisting}
+\item Issue: residual thus uses results of previous timestep, does not recompute t+1
+\item Solution: manually compute an initial iteration, thus "shifting" the residual output to t+1
 \end {itemize}
 \end{frame}
 
@@ -139,7 +140,7 @@ for (j = 1; j < sizex - 1; j++) {
 \frametitle{Sequential Optimization: Residual}
 \begin {itemize}
 
-\item Second Idea: Compute relaxation directly with residual and save for later
+\item Followup: Compute relaxation directly with residual and save for later
 \begin{lstlisting}
 for (i = 1; i < sizey - 1; i++) {
 	for (j = 1; j < sizex - 1; j++) {
