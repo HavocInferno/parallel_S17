@@ -1,5 +1,5 @@
 #!/bin/bash
-#@ wall_clock_limit = 00:20:00
+#@ wall_clock_limit = 00:2:00
 #@ job_name = heat
 #@ job_type = MPICH
 #@ class = test

@@ -23,7 +23,7 @@ double relax_jacobi( double **u1, double **utmp1,
   	int ii=i*sizex;
   	int iim1=(i-1)*sizex;
   	int iip1=(i+1)*sizex;
-#pragma ivdep
+#pragma vector always
     for( j=1; j<sizex-1; j++ ){
        unew = 0.25 * (u[ ii+(j-1) ]+
         		            u[ ii+(j+1) ]+

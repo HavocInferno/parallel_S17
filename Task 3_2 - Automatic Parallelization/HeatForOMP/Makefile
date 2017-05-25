@@ -1,5 +1,5 @@
 CC =  icc
-CFLAGS = -O3 -xhost $(PAPI_INC) 
+CFLAGS = -parallel -opt-report-phase=par  -O3 -xhost $(PAPI_INC) 
 
 MPICC = mpicc
 

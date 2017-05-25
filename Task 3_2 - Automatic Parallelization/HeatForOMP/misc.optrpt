@@ -1,0 +1,148 @@
+Intel(R) Advisor can now assist with vectorization and show optimization
+  report messages with your source code.
+See "https://software.intel.com/en-us/intel-advisor-xe" for details.
+
+
+Begin optimization report for: initialize(algoparam_t *)
+
+    Report from: Auto-parallelization optimizations [par]
+
+
+LOOP BEGIN at misc.c(40,5)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at misc.c(41,6)
+   <Peeled loop for vectorization, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at misc.c(41,6)
+   <Multiversioned v1>
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at misc.c(41,6)
+   <Remainder loop for vectorization, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at misc.c(41,6)
+   <Remainder loop for vectorization, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at misc.c(41,6)
+   <Multiversioned v2>
+      remark #17104: loop was not parallelized: existence of parallel dependence
+   LOOP END
+
+   LOOP BEGIN at misc.c(41,6)
+   <Remainder, Multiversioned v2>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at misc.c(53,5)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at misc.c(56,2)
+   <Peeled loop for vectorization>
+   LOOP END
+
+   LOOP BEGIN at misc.c(56,2)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at misc.c(56,2)
+   <Remainder loop for vectorization>
+   LOOP END
+
+   LOOP BEGIN at misc.c(72,2)
+   <Peeled loop for vectorization>
+   LOOP END
+
+   LOOP BEGIN at misc.c(72,2)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at misc.c(72,2)
+   <Remainder loop for vectorization>
+   LOOP END
+
+   LOOP BEGIN at misc.c(88,2)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+   LOOP END
+
+   LOOP BEGIN at misc.c(104,2)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+   LOOP END
+LOOP END
+===========================================================================
+
+Begin optimization report for: write_image(FILE *, double *, unsigned int, unsigned int)
+
+    Report from: Auto-parallelization optimizations [par]
+
+
+LOOP BEGIN at misc.c(163,5)
+   remark #17108: loop was not parallelized: insufficient computational work
+LOOP END
+
+LOOP BEGIN at misc.c(168,5)
+   remark #17108: loop was not parallelized: insufficient computational work
+LOOP END
+
+LOOP BEGIN at misc.c(173,5)
+   remark #17108: loop was not parallelized: insufficient computational work
+LOOP END
+
+LOOP BEGIN at misc.c(178,5)
+<Peeled loop for vectorization>
+LOOP END
+
+LOOP BEGIN at misc.c(178,5)
+   remark #17108: loop was not parallelized: insufficient computational work
+LOOP END
+
+LOOP BEGIN at misc.c(178,5)
+<Remainder loop for vectorization>
+LOOP END
+
+LOOP BEGIN at misc.c(188,5)
+   remark #17108: loop was not parallelized: insufficient computational work
+
+   LOOP BEGIN at misc.c(190,2)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at misc.c(190,2)
+   <Remainder loop for vectorization>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at misc.c(204,5)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at misc.c(206,2)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+   LOOP END
+LOOP END
+===========================================================================
+
+Begin optimization report for: coarsen(double *, unsigned int, unsigned int, double *, unsigned int, unsigned int)
+
+    Report from: Auto-parallelization optimizations [par]
+
+
+LOOP BEGIN at misc.c(241,5)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at misc.c(243,8)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at misc.c(246,11)
+         remark #17102: loop was not parallelized: not a parallelization candidate
+
+         LOOP BEGIN at misc.c(247,10)
+            remark #17102: loop was not parallelized: not a parallelization candidate
+         LOOP END
+      LOOP END
+   LOOP END
+LOOP END
+===========================================================================
