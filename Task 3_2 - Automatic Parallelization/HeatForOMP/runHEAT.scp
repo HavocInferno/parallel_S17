@@ -1,5 +1,5 @@
 #!/bin/bash
-#@ wall_clock_limit = 00:2:00
+#@ wall_clock_limit = 00:5:00
 #@ job_name = heat
 #@ job_type = MPICH
 #@ class = test
@@ -16,6 +16,21 @@
 
 . /etc/profile
 
+OMP_NUM_THREADS=1
+heat test.dat > threads1.out
 
-heat test.dat
+OMP_NUM_THREADS=2
+heat test.dat > threads2.out
+
+OMP_NUM_THREADS=4
+heat test.dat > threads4.out
+
+OMP_NUM_THREADS=8
+heat test.dat > threads8.out
+
+OMP_NUM_THREADS=16
+heat test.dat > threads16.out
+
+OMP_NUM_THREADS=32
+heat test.dat > threads32.out
 

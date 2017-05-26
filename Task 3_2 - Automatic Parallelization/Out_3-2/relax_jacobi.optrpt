@@ -1,0 +1,42 @@
+Intel(R) Advisor can now assist with vectorization and show optimization
+  report messages with your source code.
+See "https://software.intel.com/en-us/intel-advisor-xe" for details.
+
+
+Begin optimization report for: relax_jacobi(double **, double **, unsigned int, unsigned int)
+
+    Report from: Auto-parallelization optimizations [par]
+
+
+LOOP BEGIN at relax_jacobi.c(23,3)
+   remark #17109: LOOP WAS AUTO-PARALLELIZED
+
+   LOOP BEGIN at relax_jacobi.c(28,5)
+   <Peeled loop for vectorization>
+   LOOP END
+
+   LOOP BEGIN at relax_jacobi.c(28,5)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at relax_jacobi.c(28,5)
+   <Remainder loop for vectorization>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at relax_jacobi.c(23,3)
+   remark #25460: No loop optimizations reported
+
+   LOOP BEGIN at relax_jacobi.c(28,5)
+   <Peeled loop for vectorization>
+   LOOP END
+
+   LOOP BEGIN at relax_jacobi.c(28,5)
+      remark #17107: loop was not parallelized: inner loop
+   LOOP END
+
+   LOOP BEGIN at relax_jacobi.c(28,5)
+   <Remainder loop for vectorization>
+   LOOP END
+LOOP END
+===========================================================================
