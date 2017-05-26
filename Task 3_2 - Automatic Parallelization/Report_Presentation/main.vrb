@@ -1,0 +1,25 @@
+\frametitle{Task 3.2 Automatic Parallelization - pragma snippet}
+\begin{lstlisting}
+double relax_jacobi( double **u1, double **utmp1,
+         unsigned sizex, unsigned sizey )
+{ [...]
+@#pragma parallel always@
+  for( i=1; i<sizey-1; i++ ) {
+  	int ii=i*sizex;
+  	int iim1=(i-1)*sizex;
+  	int iip1=(i+1)*sizex;
+
+@#pragma ivdep@
+    for( j=1; j<sizex-1; j++ ){
+       unew = 0.25 * (u[ ii+(j-1) ]+
+        		            u[ ii+(j+1) ]+
+        		            u[ iim1+j ]+
+        		            u[ iip1+j ]);
+		    diff = unew - u[ii + j];
+		    utmp[ii+j] = unew;
+		    sum += diff * diff;
+
+    }
+  } [...]
+}
+\end{lstlisting}

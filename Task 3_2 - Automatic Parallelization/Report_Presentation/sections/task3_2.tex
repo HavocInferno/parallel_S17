@@ -1,0 +1,110 @@
+\section{Task 3.2}
+\begin{frame}[fragile]
+\frametitle{Task 3.2 Automatic Parallelization - Getting it to work}
+\begin{itemize}
+\item flag \texttt{-parallel}: enables auto parallelization
+\item flag \texttt{-opt-report-phase=par}: compilation yields report about parallelized parts, parts that could not be parallelized and the underlying reasons
+\item BUT: reports no loops were changed due to assumed data dependencies
+\item \texttt{\#pragma ivdep}: ignores dependencies for a single loop
+\item BUT: still no parallelization. Turns out icc has a threshold for optimizations it thinks are not worth it. 
+\item flag \texttt{-par-threshold0}: modifies (0=removes) this threshold
+\item alternatively \texttt{\#pragma parallel always}: overrides threshold for a single loop 
+\item flag \texttt{-guide-par}: returns possible manual optimizations during compilation\; did not find anything for relax\_jacobi.c 
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Task 3.2 Automatic Parallelization - pragma snippet}
+\begin{lstlisting}
+double relax_jacobi( double **u1, double **utmp1,
+         unsigned sizex, unsigned sizey )
+{ [...]
+@#pragma parallel always@
+  for( i=1; i<sizey-1; i++ ) {
+  	int ii=i*sizex;
+  	int iim1=(i-1)*sizex;
+  	int iip1=(i+1)*sizex;
+
+@#pragma ivdep@
+    for( j=1; j<sizex-1; j++ ){
+       unew = 0.25 * (u[ ii+(j-1) ]+
+        		            u[ ii+(j+1) ]+
+        		            u[ iim1+j ]+
+        		            u[ iip1+j ]);
+		    diff = unew - u[ii + j];
+		    utmp[ii+j] = unew;
+		    sum += diff * diff;
+
+    }
+  } [...]
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}
+\frametitle{Task 3.2 Automatic Parallelization - Speedup 1/2}
+\begin{itemize}
+\item Do performance measurements for 1, 2, 4, 8, 16 and 32 threads on SuperMUC [...] for problem size 5200. [...] sequential code as the basis for the speedup calculation. \\
+\textbf{See next slide.}
+\item Is there a difference between the sequential time from Assignment 3.1 and the sequential time of the OpenMP version? \\
+\textbf{No. At least no significant difference.}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Task 3.2 Automatic Parallelization - Speedup 2/2}
+	\begin{tikzpicture}[every node near coord/.style={anchor=\alignment}]
+		\begin{axis}[
+			legend style={cells={align=left}},
+			xtick={1,2,4,8,16,32},
+			xlabel=\#threads,
+			ylabel=speedup vs sequential execution,
+			title=Speedup of icc auto parallelization,
+			legend pos = outer north east,
+			nodes near coords,
+			no markers]
+			\addplot[color=red] table {plots/res_speedups.out};.
+		\end{axis}
+	\end{tikzpicture}
+\end{frame}
+
+\begin{frame}
+\frametitle{Task 3.2 - Curious performance with many threads}
+	\begin{tikzpicture}
+		\begin{axis}[
+			legend style={cells={align=left}},
+			xtick={8,16,32},
+			xlabel=\#threads,
+			ylabel=PAPI MFlop/s,
+			title=Mflop/s for 8/16/32t for different runs at 5200 res,
+			legend pos = outer north east,
+			nodes near coords,
+			scaled ticks = false,
+			y tick label style={
+        		/pgf/number format/.cd,
+		            fixed,
+        		    fixed zerofill,
+		            precision=0,
+        		/tikz/.cd
+		    },
+			no markers]
+			\addplot[color=red] table {plots/run1_5200res_8-16-32.out};.
+			\addplot[color=green] table {plots/run2_5200res_8-16-32.out};.
+			\addplot[color=blue] table {plots/run3_5200res_8-16-32.out};.
+			\legend{-1st run, -2nd run, -3rd run}
+		\end{axis}
+	\end{tikzpicture}
+\end{frame}
+
+\begin{frame}
+\frametitle{Task 3.2 - Curious performance with many threads}
+\begin{itemize}
+\item Performance with 8 to 32 threads tends to fluctuate. 
+\item Possible explanation: \begin{itemize}
+\item We run on Intel Xeon Processor E5-2680 CPUs, each has 8c/16t, thus any run with \textgreater 8 threads uses Hyper-Threading
+\item "Computational intensive applications with fine-tuned floating-point operations have less chance to be improved in performance from Hyper-Threading, because the CPU resources could already be highly utilized."
+\item "Cache-friendly applications might suffer from Hyper-Threading enabled, because logical processors share the caches and thus the processes running on the logical processors might be competing for the caches' access, which might result in performance degradation."
+\item Source: \url{https://www.researchgate.net/publication/267242498_An_Empirical_Study_of_Hyper-Threading_in_High_Performance_Computing_Clusters}
+\end{itemize} 
+\end{itemize}
+\end{frame}

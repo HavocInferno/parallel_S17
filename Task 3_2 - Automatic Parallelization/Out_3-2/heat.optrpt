@@ -1,0 +1,35 @@
+Intel(R) Advisor can now assist with vectorization and show optimization
+  report messages with your source code.
+See "https://software.intel.com/en-us/intel-advisor-xe" for details.
+
+
+Begin optimization report for: main(int, char **)
+
+    Report from: Auto-parallelization optimizations [par]
+
+
+LOOP BEGIN at heat.c(75,2)
+   remark #17102: loop was not parallelized: not a parallelization candidate
+
+   LOOP BEGIN at heat.c(82,3)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at heat.c(83,4)
+         remark #17104: loop was not parallelized: existence of parallel dependence
+
+         LOOP BEGIN at heat.c(83,4)
+         <Multiversioned v2>
+            remark #17104: loop was not parallelized: existence of parallel dependence
+         LOOP END
+
+         LOOP BEGIN at heat.c(83,4)
+         <Remainder, Multiversioned v2>
+         LOOP END
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at heat.c(95,3)
+      remark #17102: loop was not parallelized: not a parallelization candidate
+   LOOP END
+LOOP END
+===========================================================================

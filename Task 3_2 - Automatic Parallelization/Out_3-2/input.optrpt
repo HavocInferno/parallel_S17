@@ -1,0 +1,24 @@
+Intel(R) Advisor can now assist with vectorization and show optimization
+  report messages with your source code.
+See "https://software.intel.com/en-us/intel-advisor-xe" for details.
+
+
+Begin optimization report for: read_input(FILE *, algoparam_t *)
+
+    Report from: Auto-parallelization optimizations [par]
+
+
+LOOP BEGIN at input.c(52,3)
+   remark #17102: loop was not parallelized: not a parallelization candidate
+LOOP END
+===========================================================================
+
+Begin optimization report for: print_params(algoparam_t *)
+
+    Report from: Auto-parallelization optimizations [par]
+
+
+LOOP BEGIN at input.c(80,3)
+   remark #17102: loop was not parallelized: not a parallelization candidate
+LOOP END
+===========================================================================
