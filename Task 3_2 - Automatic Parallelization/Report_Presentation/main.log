@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9.6210 64-bit) (preloaded format=pdflatex 2017.5.10)  26 MAY 2017 15:16
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9.6210 64-bit) (preloaded format=pdflatex 2017.5.10)  26 MAY 2017 15:18
 entering extended mode
 **./main.tex
 (main.tex
@@ -2250,7 +2250,7 @@ Missing character: There is no . in font nullfont!
 PGFPlots: reading {plots/run3_5200res_8-16-32.out}
 Missing character: There is no . in font nullfont!
 
-Overfull \hbox (16.94337pt too wide) in paragraph at lines 97--97
+Overfull \hbox (13.29338pt too wide) in paragraph at lines 97--97
 [][]  
  []
 
@@ -2328,7 +2328,7 @@ X 2.9/fonts/type1/public/lm/lmtt10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1
 /public/lm/lmtt8.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/s
 ymbols/msam10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/symb
 ols/msam7.pfb>
-Output written on main.pdf (9 pages, 266842 bytes).
+Output written on main.pdf (9 pages, 266843 bytes).
 PDF statistics:
  310 PDF objects out of 1000 (max. 8388607)
  21 named destinations out of 1000 (max. 500000)
