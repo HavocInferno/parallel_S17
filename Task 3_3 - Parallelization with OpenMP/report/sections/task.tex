@@ -1,5 +1,59 @@
-\section*{3.2 Automatic Parallelization}
-\label{3_2}
+\section*{3.3 OpenMP}
+\label{3_3}
 
 
-\subsection*{3.2.1 Subtask 1}
+\subsection*{3.3.1 Parallelize the Jacobi algorithm with OpenMP}
+
+\begin{lstlisting}
+#pragma omp parallel
+  {
+#pragma omp for schedule (guided) private (unew, diff) reduction (+:sum) nowait
+    for( i=1; i<sizey-1; i++ ) {
+      int ii=i*sizex;
+      int iim1=(i-1)*sizex;
+      int iip1=(i+1)*sizex;
+#pragma ivdep
+      for( j=1; j<sizex-1; j++ ){
+	unew = 0.25 * (u[ ii+(j-1) ]+
+		       u[ ii+(j+1) ]+
+		       u[ iim1+j ]+
+		       u[ iip1+j ]);
+	diff = unew - u[ii + j];
+	utmp[ii+j] = unew;
+	sum += diff * diff;
+      }
+    }
+  }
+\end{lstlisting}
+\#Pragma omp parallel creates a parallel region. \#Pragma omp for shares the work among the threads. Each thread writes into diff and unew and reads from them, so we have to declare them as private data. Every thread adds some value into sum (which is our residuum), so we have to use reduction for it. We specify nowait because \#pragma omp parallel already introduces a barrier and there is no additional value in having a barrier after \#pragma omp for.
+
+\subsection*{3.3.2 Optimize for NUMA according to first touch allocation policy}
+First touch allocation policy means that the operating system allocates memory upon initialization in the memory that is nearest to the allocating cpu. Thus, in a NUMA system, if we just use one cpu to initialize the arrays, the other cpu will have a higher latency when accessing its data. We can avoid this by using the very same OpenMP directives for allocating the memory as we used to calculate the new values.
+\begin{lstlisting}
+int initialize( algoparam_t *param )
+{
+//...
+#pragma omp parallel
+    {
+#pragma omp for schedule (guided) nowait
+      for (i=0;i<np;i++){
+    	for (j=0;j<np;j++){
+	  param->u[i*np+j]=0;
+	  param->uhelp[i*np+j]=0;
+    	}
+      }
+    }
+//...
+}
+
+\end{lstlisting}
+
+
+Source: \url{http://www.nersc.gov/users/computational-systems/cori/application-porting-and-performance/improving-openmp-scaling/#toc-anchor-3}
+
+
+\subsection*{3.3.3 Any other optimization possibilities?}
+
+
+
+\subsection*{3.3.4 Run problem size 5200 with 1, 2, 4, 8, 16, 32 threads. Give the speedup diagram and explain your findings.}
