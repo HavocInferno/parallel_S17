@@ -31,3 +31,19 @@
 # Debug files
 *.dSYM/
 *.su
+
+
+# Tex stuff
+*.log
+*.aux
+*.lof
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.cb
+*.cb2
+
+#emacs backups
+*~

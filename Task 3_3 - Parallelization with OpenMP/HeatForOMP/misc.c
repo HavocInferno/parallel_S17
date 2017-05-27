@@ -37,13 +37,16 @@ int initialize( algoparam_t *param )
 				      (param->visres+2) *
 				      (param->visres+2) );
 
-    for (i=0;i<np;i++){
+#pragma omp parallel
+    {
+#pragma omp for schedule (guided) nowait
+      for (i=0;i<np;i++){
     	for (j=0;j<np;j++){
-    		param->u[i*np+j]=0;
-			param->uhelp[i*np+j]=0;
+	  param->u[i*np+j]=0;
+	  param->uhelp[i*np+j]=0;
     	}
+      }
     }
-
     if( !(param->u) || !(param->uhelp) || !(param->uvis) )
     {
 	fprintf(stderr, "Error: Cannot allocate memory\n");
