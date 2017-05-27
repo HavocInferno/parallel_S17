@@ -13,15 +13,80 @@ Initially, the compiler suggests there is a parallel dependence between iteratio
 By putting ``\#pragma parallel private (unew, diff, sum)'' ahead of the outer loop, we suggest to the compiler that this loop might get parallelized and avoid the issue of variables being written into accross different threads. However, because the loopsize cannot be determined at compiletime, icc will not parallelize the llop due to ``insufficient computational work''. \newline If we change the pragma to ``\#pragma parallel always private (unew, diff, sum)'', the loop will be parallelized. You can also force the compiler to parallelize by adding ``-par-threshold0'' to the compiler flags. This obviously does not affect specific loops, but changes the global setting in your program. \newline The flag -guide-par gives you hints on sections of the code that might get parallelized.
 
 \begin{lstlisting}
-#pragma parallel always private (unew, diff, sum)
-  for( i=1; i<sizey-1; i++) {
-    int ii=i*sizex;
-    int iim1=(i-1)*sizex
-    int iip1=(i+1)*sizex
+double relax_jacobi( double **u1, double **utmp1,
+         unsigned sizex, unsigned sizey )
+{ [...]
+@#pragma parallel always@
+  for( i=1; i<sizey-1; i++ ) {
+  	int ii=i*sizex;
+  	int iim1=(i-1)*sizex;
+  	int iip1=(i+1)*sizex;
 
-#pragma ivdep
-    for( j=1; j<sizex-1; j++) {
-      //loop implementation
+@#pragma ivdep@
+    for( j=1; j<sizex-1; j++ ){
+       unew = 0.25 * (u[ ii+(j-1) ]+
+        		            u[ ii+(j+1) ]+
+        		            u[ iim1+j ]+
+        		            u[ iip1+j ]);
+		    diff = unew - u[ii + j];
+		    utmp[ii+j] = unew;
+		    sum += diff * diff;
+
     }
-  }
+  } [...]
+}
 \end{lstlisting}
+
+\subsection*{3.2.4 Do performance measurements for 1, 2, 4, 8, 16 and 32 threads on SuperMUC with the configuration in test.dat. Provide a speedup graph for problem size 5200}
+
+\iffalse
+	\begin{tikzpicture}[every node near coord/.style={anchor=\alignment}]
+		\begin{axis}[
+			legend style={cells={align=left}},
+			xtick={1,2,4,8,16,32},
+			xlabel=\#threads,
+			ylabel=speedup vs sequential execution,
+			title=Speedup of icc auto parallelization,
+			legend pos = outer north east,
+			nodes near coords,
+			no markers]
+			\addplot[color=red] table {plots/res_speedups.out};.
+		\end{axis}
+	\end{tikzpicture}
+\fi
+
+\subsection*{3.2.5 Is there a difference between the sequential time from Assignment 3.1 and the sequential time of the OpenMP version?}
+As one can see in the plot, the parallelized version for one thread is slightly slower. This is probably due to overhead.
+
+\subsection*{Addendum}
+We noticed that the runtime, even in batchscripts, is pretty inconsistent.
+\iffalse
+\begin{tikzpicture}
+		\begin{axis}[
+			legend style={cells={align=left}},
+			xtick={8,16,32},
+			xlabel=\#threads,
+			ylabel=PAPI MFlop/s,
+			title=Mflop/s for 8/16/32t for different runs at 5200 res,
+			legend pos = outer north east,
+			nodes near coords,
+			scaled ticks = false,
+			y tick label style={
+        		/pgf/number format/.cd,
+		            fixed,
+        		    fixed zerofill,
+		            precision=0,
+        		/tikz/.cd
+		    },
+			no markers]
+			\addplot[color=red] table {plots/run1_5200res_8-16-32.out};.
+			\addplot[color=green] table {plots/run2_5200res_8-16-32.out};.
+			\addplot[color=blue] table {plots/run3_5200res_8-16-32.out};.
+			\legend{1st run, 2nd run, 3rd run}
+		\end{axis}
+	\end{tikzpicture}
+\fi
+
+
+Also, more threads do not necessarily speed up, as we, in particular in this application, which mainly uses floating point operations, do not gain anything when we use Hyperthreading. \url{https://www.researchgate.net/publication/267242498_An_Empirical_Study_of_Hyper-Threading_in_High_Performance_Computing_Clusters}
+
