@@ -21,7 +21,7 @@ double relax_jacobi( double **u1, double **utmp1,
 
 
   {
-#pragma omp for schedule (guided, omp_get_num_threads()) private (unew, diff) reduction (+:sum) nowait
+#pragma omp for schedule (guided) private (unew, diff) reduction (+:sum) nowait
     for( i=1; i<sizey-1; i++ ) {
       int ii=i*sizex;
       int iim1=(i-1)*sizex;
