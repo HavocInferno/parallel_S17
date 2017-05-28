@@ -53,7 +53,28 @@ Source: \url{http://www.nersc.gov/users/computational-systems/cori/application-p
 
 
 \subsection*{3.3.3 Any other optimization possibilities?}
+One idea was to check the performance change for the various scheduling strategies. We tested static at sizes 10, 50 and 100, dynamic at size 50, guided and runtime.
+Looking at the numbers achieved, runtime seems to be the fastest strategy, followed by guided, static size 50 and static size 100 on roughly the same level, with dynamic size 50 in second-to-last and static size 10 in last spot by a wide margin. 
 
+\begin{tikzpicture}
+		\begin{axis}[
+			legend style={cells={align=left}},
+			xtick={200,1200,2200,3200,4200,5200},
+			xlabel=resolution,
+			ylabel=MFlop/s,
+			title=Mflop/s (averaged over 3 runs) for different strategies,
+			legend pos = outer north east,
+			scaled ticks = false,
+			no markers]
+			\addplot[color=black] table {plots/avg_static10.dat};.
+			\addplot[color=green] table {plots/avg_static50.dat};.
+			\addplot[color=blue] table {plots/avg_static100.dat};.
+			\addplot[color=magenta] table {plots/avg_dynamic50.dat};.
+			\addplot[color=cyan] table {plots/avg_guided.dat};.
+			\addplot[color=red] table {plots/avg_runtime.dat};.
+			\legend{static (size 10), static (size 50), static (size 100), dynamic (size 50), guided, runtime}
+		\end{axis}
+	\end{tikzpicture}
 
 
 \subsection*{3.3.4 Run problem size 5200 with 1, 2, 4, 8, 16, 32 threads. Give the speedup diagram and explain your findings.}

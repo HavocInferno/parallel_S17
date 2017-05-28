@@ -99,6 +99,7 @@ int main(int argc, char *argv[]) {
 		t1 = gettime();
 		time[exp_number] = wtime() - time[exp_number];
 
+		/*
 		printf("\n\nResolution: %u\n", param.act_res);
 		printf("===================\n");
 		printf("Execution time: %f\n", time[exp_number]);
@@ -106,7 +107,9 @@ int main(int argc, char *argv[]) {
 
 		printf("megaflops:  %.1lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / time[exp_number] / 1000000);
 		printf("  flop instructions (M):  %.3lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / 1000000);
-
+		*/
+		printf("%u %.1lf\n", param.act_res, (double) param.maxiter * (np - 2) * (np - 2) * 7 / time[exp_number] / 1000000);
+		
 		exp_number++;
 	}
 
