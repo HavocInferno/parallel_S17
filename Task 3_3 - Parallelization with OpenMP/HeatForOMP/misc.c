@@ -39,7 +39,7 @@ int initialize( algoparam_t *param )
 
 #pragma omp parallel
     {
-#pragma omp for schedule (guided) nowait
+#pragma omp for schedule (runtime) nowait
       for (i=0;i<np;i++){
     	for (j=0;j<np;j++){
 	  param->u[i*np+j]=0;
