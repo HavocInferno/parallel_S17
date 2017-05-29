@@ -53,8 +53,8 @@ Source: \url{http://www.nersc.gov/users/computational-systems/cori/application-p
 
 
 \subsection*{3.3.3 Any other optimization possibilities?}
-One idea was to check the performance change for the various scheduling strategies. We tested static at sizes 10, 50 and 100, dynamic at size 50, guided and runtime.
-Looking at the numbers achieved, runtime seems to be the fastest strategy, followed by guided, static size 50 and static size 100 on roughly the same level, with dynamic size 50 in second-to-last and static size 10 in last spot by a wide margin. 
+We checked the performance change for the various scheduling strategies. We tested static at sizes 10, 50 and 100, dynamic at size 50, guided and runtime.
+Looking at the numbers achieved, runtime seems to be the fastest strategy, followed by guided, static size 50 and static size 100 on roughly the same level, with dynamic size 50 in second-to-last and static size 10 in last spot by a wide margin. Thus, we decided to use scheduling strategy runtime for the measurements in the next task.
 
 \begin{tikzpicture}
 		\begin{axis}[
@@ -94,4 +94,4 @@ Looking at the numbers achieved, runtime seems to be the fastest strategy, follo
   \end{axis}
 \end{tikzpicture}
 
-As opposed to the icc auto parallelisation the speedup peaks at 8 threads with a speedup at roughly 5.7. Prior to NUMA optimizations no speedup improvement was observable beyond 4 threads with OpenMP. Our observations have shown that the different implementations have a peak performance of 12 MFLOP/S (icc, OMP no NUMA) and 24 MFLOP/S (OMP NUMA), which would be, according to coarse estimates, roughly enough to saturate the memory bandwidth of 1 and 2 processors respectively. This shows that the NUMA optimization met its goal to make full use of both sockets in a node. 
+As opposed to the icc auto parallelisation the speedup peaks at 8 threads with a speedup at roughly 5.7. Prior to NUMA optimizations no speedup improvement was observable beyond 4 threads with OpenMP. Our observations have shown that the different implementations have a peak performance of 12 MFLOP/S (icc, OMP no NUMA) and 24 MFLOP/S (OMP NUMA), which would be, according to coarse estimates, roughly enough to saturate the memory bandwidth of 1 and 2 processors respectively (102.4 GB/s per processor). This shows that the NUMA optimization met its goal to make full use of both sockets in a node. A rough estimation would be, that the memory bandwidth divided by the floprate on one cpu (i. e. prior to the optimization according to first touch allocation policy) is approximately 8, which actually is sizeof(double). That means, that in order to reach the memory limit, we would need to just have one memory access for a double per floating point operation, which sounds pretty realistic.
