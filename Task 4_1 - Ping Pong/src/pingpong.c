@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include "mpi.h"
 
-#define RUNS 1000000
+#define RUNS 100000
+#define MAX_SIZE_EXPONENT 20
 
 
 int main (int argc, char** argv)
@@ -63,10 +64,70 @@ int main (int argc, char** argv)
     }
   else if (atoi(argv[1])==1)
     {
-      //measure bandwidth
+      //code for bandwidth
       printf("Measuring bandwidth\n\n");
+      MPI_Status status;
+      int ctr;
+	  int sizeExp;
+	  char* send;
+	  char* recv;
+	  int numBytes;
+	  
+	 printf("msg size - bandwidth in MBytes/s\n");
+    for(sizeExp = 0; sizeExp < MAX_SIZE_EXPONENT+1; sizeExp++) {
+	  numBytes = ipow(2,sizeExp);
+	  send = (char*) calloc(numBytes, 1);
+	  recv = (char*) calloc(numBytes, 1);
+      MPI_Barrier(MPI_COMM_WORLD);
+      start=MPI_Wtime ();
+      
+      if (myid==0)
+	{
+	  //loop for main thread
+	  for (ctr=0; ctr<RUNS; ctr++)
+	    {
+	      MPI_Send(send, numBytes, MPI_BYTE, 1, 0, MPI_COMM_WORLD);
+	      MPI_Recv(recv, numBytes, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
+	    }
+	  
+	}
+      else if (myid==1)
+	{
+	  //loop for second thread
+	  for (ctr=0; ctr<RUNS; ctr++)
+	    { 
+	      MPI_Recv(recv, numBytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD, &status);
+	      MPI_Send(send, numBytes, MPI_BYTE, 0, 1, MPI_COMM_WORLD); 
+	    }
+	}
+      if (myid==0)
+	{
+	  end=MPI_Wtime();
+	  printf("%d %f\n", 
+			numBytes, 
+				(double)numBytes/
+				((end-start)/(RUNS*2.0)*1024.0*1024.0)
+			);
 
+	}
+	free(send);
+	free(recv);
+	}
     }
   
   MPI_Finalize();
+}
+
+int ipow(int base, int exp)
+{
+    int result = 1;
+    while (exp)
+    {
+        if (exp & 1)
+            result *= base;
+        exp >>= 1;
+        base *= base;
+    }
+
+    return result;
 }
