@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "mpi.h"
 
-#define RUNS 1000
+#define RUNS 1000000
 
 
 int main (int argc, char** argv)
@@ -57,7 +57,7 @@ int main (int argc, char** argv)
       if (myid==0)
 	{
 	  end=MPI_Wtime();
-	  printf("starttime: %f\nendtime %f\nduration %f\n", start, end, ((end-start)/RUNS));
+	  printf("starttime: %f\nendtime %f\nduration %f\n", start, end, ((end-start)/(RUNS*2.0)));
 
 	}
     }
