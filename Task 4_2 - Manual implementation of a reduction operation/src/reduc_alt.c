@@ -18,7 +18,8 @@ int main (int argc, char** argv)
     fprintf(stderr, "Error initializing MPI, Errorcode %i", retval);
   MPI_Comm_size(MPI_COMM_WORLD, &np);
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  MPI_Errhandler_set(MPI_COMM_WORLD,MPI_ERRORS_RETURN);
+
+  int runs = (int) (round((log2 (np))));
   int buf=0;
 
 
@@ -64,23 +65,16 @@ int main (int argc, char** argv)
   if (myid==1)
     printf("Process %i still alive, has sum %i\n", myid,sum);
   //printf("Number of runs %i\n", runs);
-  ctr=0;
-  while(1)
+  for (ctr=0; ctr<runs; ctr++)
     {
       //MPI_Barrier(MPI_COMM_WORLD);
       //process recvs
       if ((myid%(pow2(ctr+1)))==0)
 	{
-	  retval=MPI_Recv(&buf, 1, MPI_INT,  myid+pow2(ctr),MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-	  //allows process0 to break out of loop
-	  if (retval!=MPI_SUCCESS)
-	    {
-	      break;
-	    }
+	  MPI_Recv(&buf, 1, MPI_INT,  myid+pow2(ctr),MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 	  printf("Process %i recvs %i from %i\n", myid, buf ,myid+pow2(ctr));
 	  sum+=buf;
 	}
-      //process sends      
       else
 	{
 	  MPI_Send(&sum, 1, MPI_INT,  myid-pow2(ctr),0, MPI_COMM_WORLD);
@@ -89,13 +83,12 @@ int main (int argc, char** argv)
 	  printf("Process %i sends %i to %i\n", myid, sum,myid-pow2(ctr));
 	  break;
 	} 
-
-      ctr++;
+      //process sends
     }
   //MPI_Barrier(MPI_COMM_WORLD);
   if (myid==0)
     {
-      printf("Reduction sum: %i. Correct value is %d.\n", sum, totalsize*(totalsize-1)/2);
+      printf("Reduction sum: %i on proc %i\n", sum, myid);
     }
   MPI_Finalize();
   free (array);
