@@ -90,6 +90,7 @@ int main (int argc, char** argv)
     {
       printf("Reduction sum: %i on proc %i\n", sum, myid);
     }
+  MPI_Finalize();
   free (array);
   array=0;
   printf("Process %d reached end\n", myid);

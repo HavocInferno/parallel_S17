@@ -97,6 +97,7 @@ int main (int argc, char** argv)
     {
       printf("Reduction sum: %i. Correct value is %d.\n", sum, totalsize*(totalsize-1)/2);
     }
+  MPI_Finalize();
   free (array);
   array=0;
   printf("Process %d reached end\n", myid);
