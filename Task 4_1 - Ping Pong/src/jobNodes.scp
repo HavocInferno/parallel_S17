@@ -18,3 +18,4 @@ module load mpi.intel
 . /etc/profile
 
 mpirun -np 2 pingpong 1 > diffnodes.dat
+mpirun -np 2 pingpong 0 > diffnodesLatency.dat

@@ -18,3 +18,4 @@ module load mpi.intel
 . /etc/profile
 
 mpirun -np 2 --map-by ppr:1:socket pingpong 1 > diffsockets.dat
+mpirun -np 2 --map-by ppr:1:socket pingpong 0 > diffsocketsLatency.dat

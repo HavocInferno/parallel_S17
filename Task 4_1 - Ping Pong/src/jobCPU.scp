@@ -18,3 +18,4 @@ module load mpi.intel
 . /etc/profile
 
 mpirun -np 2 --bind-to core pingpong 1 > samecpu.dat
+mpirun -np 2 --bind-to core pingpong 0 > samecpuLatency.dat
