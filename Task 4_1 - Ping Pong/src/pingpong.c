@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include "mpi.h"
+#include <math.h>
 
-#define RUNS 100000
-#define MAX_SIZE_EXPONENT 20
+#define RUNS 1000
 
+
+void init (char* arr, int size);
 
 int main (int argc, char** argv)
 {
@@ -19,14 +21,14 @@ int main (int argc, char** argv)
     fprintf(stderr, "Error initializing MPI. Errorcode %i\n", retval);
   MPI_Comm_size(MPI_COMM_WORLD, &np);
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-    
+  MPI_Status status;    
+  
   if (atoi(argv[1])==0)
     {
       //code for latency
       printf("Measuring latency\n\n");
       uint32_t send=0;
       uint32_t recv;
-      MPI_Status status;
       int ctr;
       if (retval=(sizeof(send)!=4))
 	{
@@ -44,6 +46,8 @@ int main (int argc, char** argv)
 	      MPI_Send(&send, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
 	      MPI_Recv(&recv, 1, MPI_INT, 1, 1, MPI_COMM_WORLD, &status);
 	    }
+	  end=MPI_Wtime();
+	  printf("starttime: %f\nendtime %f\nduration %f usec\n", start, end, 1000000*(((end-start)/(2*RUNS))));
 	  
 	}
       else if (myid==1)
@@ -55,79 +59,62 @@ int main (int argc, char** argv)
 	      MPI_Send(&send, 1, MPI_INT, 0, 1, MPI_COMM_WORLD); 
 	    }
 	}
-      if (myid==0)
-	{
-	  end=MPI_Wtime();
-	  printf("starttime: %f\nendtime %f\nduration %f\n", start, end, ((end-start)/(RUNS*2.0)));
-
-	}
     }
   else if (atoi(argv[1])==1)
     {
-      //code for bandwidth
-      printf("Measuring bandwidth\n\n");
-      MPI_Status status;
-      int ctr;
-	  int sizeExp;
-	  char* send;
-	  char* recv;
-	  int numBytes;
-	  
-	 printf("msg size - bandwidth in MBytes/s\n");
-    for(sizeExp = 0; sizeExp < MAX_SIZE_EXPONENT+1; sizeExp++) {
-	  numBytes = ipow(2,sizeExp);
-	  send = (char*) calloc(numBytes, 1);
-	  recv = (char*) calloc(numBytes, 1);
-      MPI_Barrier(MPI_COMM_WORLD);
-      start=MPI_Wtime ();
-      
-      if (myid==0)
+      //measure bandwidth
+      printf("Measuring bandwidth\n\nMSGSize [kb] Bandwidth [MB/sec]\n");
+      unsigned size = 0;
+      for (size;size<=20;size++)
 	{
-	  //loop for main thread
-	  for (ctr=0; ctr<RUNS; ctr++)
+	  //different data sizes
+	  int length= pow(2,size);
+	  char* src = malloc(length* sizeof(char));
+	  char* dst = malloc(length* sizeof(char));
+	  int ctr=0;
+	  init(src, length);
+	  init(dst, length);
+	  MPI_Barrier(MPI_COMM_WORLD);
+	  start=MPI_Wtime ();
+	  if (myid==0)
 	    {
-	      MPI_Send(send, numBytes, MPI_BYTE, 1, 0, MPI_COMM_WORLD);
-	      MPI_Recv(recv, numBytes, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
+	      //loop for main thread
+	      for (ctr=0; ctr<RUNS; ctr++)
+		{
+		  MPI_Send(src, length, MPI_BYTE, 1, 0, MPI_COMM_WORLD);
+		  MPI_Recv(dst, length, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
+		}
+	      end=MPI_Wtime();
+	      printf("%4.4f %f\n", 
+		     (double)(length*sizeof(char))/1024.0,
+		     (sizeof(char)*length*RUNS*2)/(pow(2,20)*(end-start))
+		     );
+	      
 	    }
-	  
-	}
-      else if (myid==1)
-	{
-	  //loop for second thread
-	  for (ctr=0; ctr<RUNS; ctr++)
-	    { 
-	      MPI_Recv(recv, numBytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD, &status);
-	      MPI_Send(send, numBytes, MPI_BYTE, 0, 1, MPI_COMM_WORLD); 
+	  else if (myid==1)
+	    {
+	      //loop for second thread
+	      for (ctr=0; ctr<RUNS; ctr++)
+		{ 
+		  MPI_Recv(dst, length, MPI_BYTE, 0, 0, MPI_COMM_WORLD, &status);
+		  MPI_Send(src, length, MPI_BYTE, 0, 1, MPI_COMM_WORLD); 
+		}
 	    }
-	}
-      if (myid==0)
-	{
-	  end=MPI_Wtime();
-	  printf("%d %f\n", 
-			numBytes, 
-				(double)numBytes/
-				((end-start)/(RUNS*2.0)*1024.0*1024.0)
-			);
-
-	}
-	free(send);
-	free(recv);
+	  free(src);
+	  free(dst);
+	  src=0;
+	  dst=0;
 	}
     }
   
+
   MPI_Finalize();
 }
-
-int ipow(int base, int exp)
+void init (char* arr, int size)
 {
-    int result = 1;
-    while (exp)
+  int ctr=0;
+  for (ctr; ctr<size;ctr++)
     {
-        if (exp & 1)
-            result *= base;
-        exp >>= 1;
-        base *= base;
+      arr[ctr]=ctr;
     }
-
-    return result;
 }

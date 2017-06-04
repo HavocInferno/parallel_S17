@@ -1,1 +1,24 @@
 \section*{4.1 Ping Pong}
+\begin{tikzpicture}
+  \begin{axis}[
+      legend style={cells={align=left}},
+      xtick={4,64,256,512,1024},
+      xlabel=message size in KB,
+      ylabel=bandwidth in MB/s,
+      title=Intel MPI performance (Infiniband),
+      legend pos = outer north east,
+      scaled ticks = false,
+      y tick label style={
+        /pgf/number format/.cd,
+	fixed,
+        fixed zerofill,
+	precision=0,
+        /tikz/.cd
+      },
+      no markers]
+    \addplot[color=red] table {plots/samecpu.dat};.
+    \addplot[color=green] table {plots/diffsockets.dat};.
+    \addplot[color=blue] table {plots/diffnodes.dat};.
+    \legend{intracpu, intersocket, internode}
+		\end{axis}
+\end{tikzpicture}

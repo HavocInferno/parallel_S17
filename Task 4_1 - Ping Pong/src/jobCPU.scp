@@ -1,14 +1,14 @@
 #!/bin/bash
-#@ wall_clock_limit = 00:02:00
+#@ wall_clock_limit = 00:03:00
 #@ job_name = heat
 #@ job_type = MPICH
 #@ class = test
 #@ output = job.out
 #@ error = job.out
-#@ node = 1
-##@ total_tasks=1
+#@ node = 1  
+##@ total_tasks=2
 ##@ task_geometry = {(0,2) (1,3)}
-#@ tasks_per_node = 16
+#@ tasks_per_node = 2
 #@ network.mpi = sn_all,not_shared,us
 #@ node_usage = not_shared
 #@ energy_policy_tag = NONE
@@ -16,4 +16,5 @@
 module unload mpi.ibm
 module load mpi.intel
 . /etc/profile
-mpirun -np 2 pingpong 0
+
+mpirun -np 2 --bind-to core pingpong 1 > samecpu.dat
