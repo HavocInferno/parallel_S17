@@ -10,7 +10,7 @@
 /* We were not quite sure how to understand that the number of processes should only be known at initialization time. We thought it could mean a) that we can only use MPI_Comm_size at initialization time, but reuse the variable, so
  * that we can not use np==1 as a break condition in our loop, after we updated np during each iteration (we could not do that anyway, because there is no way to synchronize that, and we would have to shut down all processes,
  * which is pretty ugly. However, from this understanding, we would be allowed to use log2(np) as upper bound for the number of iterations, as this only relies on the number of processes at initialization time.
- * We think it could also mean, that we can not use any variable related to np as upper bound for the loop. Default behaviour of our code is a), if we are supposed to use b, add #define solutionb
+ * We thought it could also mean, that b) we can not use any variable related to np as upper bound for the loop. Default behaviour of our code is a), if we are supposed to use b, add #define solutionb
 */
 
 //#define solutionb
@@ -79,7 +79,7 @@ int main (int argc, char** argv)
     }
   ctr=0;
 #ifdef solutionb
-  /* This implementation uses to separate break conditions: 1. A node has sent its data to the parentnode 2. The node tries to receive data from a node that does not exist
+  /* This implementation uses two separate break conditions: 1. A node has sent its data to the parentnode 2. The node tries to receive data from a node that does not exist
    * Condition 1. terminates processes {1;np}, while process 0 never sends its data and thus does never meet that condition. However, once process 0 has received the data from process
    * (np/2)-1, and thus the reduction is completed, it tries to receive data from process np, which does not exist. Due to the changed Errorhandler setting, this does not crash the program
    * but returns a value != MPI_SUCCESS, which can be used as break condition. However, due to the ugliness of this code, we prefer the default solution.
@@ -96,14 +96,14 @@ int main (int argc, char** argv)
 	      printf("Process %i tried to receive data from process %i, does not exist, thus reduction is finished\n", myid, myid+pow2(ctr));
 	      break;
 	    }
-	  printf("Process %i recvs %i from %i\n", myid, buf ,myid+pow2(ctr));
+	  printf("Process %i recvs %i from %i\n", myid, buf, myid+pow2(ctr));
 	  sum+=buf;
 	}
       //process sends      
       else
 	{
-	  MPI_Send(&sum, 1, MPI_INT,  myid-pow2(ctr),0, MPI_COMM_WORLD);
-	  printf("Process %i sends %i to %i\n", myid, sum,myid-pow2(ctr));
+	  MPI_Send(&sum, 1, MPI_INT, myid-pow2(ctr),0, MPI_COMM_WORLD);
+	  printf("Process %i sends %i to %i\n", myid, sum, myid-pow2(ctr));
 	  break;
 	} 
       ctr++;
