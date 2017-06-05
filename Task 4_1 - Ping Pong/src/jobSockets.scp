@@ -15,5 +15,5 @@
 module unload mpi.ibm
 module load mpi.intel
 . /etc/profile
-mpirun -env I_MPI_PIN_PROCESSOR_LIST=0,16 -np 2 pingpong 1 > diffSockets.dat
-mpirun -env I_MPI_PIN_PROCESSOR_LIST=0,16 -np 2 pingpong 0 > diffSocketsLatency.dat
+mpirun -env I_MPI_PIN_PROCESSOR_LIST=0,8 -np 2 pingpong 1 > diffSockets.dat
+mpirun -env I_MPI_PIN_PROCESSOR_LIST=0,8 -np 2 pingpong 0 > diffSocketsLatency.dat

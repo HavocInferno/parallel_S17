@@ -1,8 +1,8 @@
 \section*{4.1 Ping Pong}
 \subsection{Latency for zero size (4B) message}
 \begin{itemize}
-	\item intracpu: 1.281500 usec
-	\item intersocket: 1.373053 usec (wrong)
+	\item intrasocket:  0.566804 usec
+	\item intersocket: 0.971603 usec
 	\item internode: 3.103495 usec
 \end{itemize}
 
@@ -25,8 +25,8 @@
       },
       no markers]
     \addplot[color=red] table {plots/samecpu.dat};.
-    \addplot[color=green] table {plots/diffsockets.dat};.
+    \addplot[color=green] table {plots/diffSockets.dat};.
     \addplot[color=blue] table {plots/diffnodes.dat};.
-    \legend{intracpu, intersocket (wrong), internode}
+    \legend{intrasocket, intersocket, internode}
 		\end{axis}
 \end{tikzpicture}
