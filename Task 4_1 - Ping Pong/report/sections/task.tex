@@ -1,9 +1,9 @@
 \section*{4.1 Ping Pong}
 \subsection{Latency for zero size (4B) message}
 \begin{itemize}
-	\item intrasocket:  0.566804 usec
-	\item intersocket: 0.971603 usec
-	\item internode: 3.103495 usec
+	\item intrasocket:  0.383035 usec
+	\item intersocket: 0.792160 usec
+	\item internode: 1.616740 usec
 \end{itemize}
 
 \subsection{Bandwidth between two resources for increasing message length}
@@ -13,7 +13,7 @@
       xtick={4,64,256,512,1024},
       xlabel=message size in KB,
       ylabel=bandwidth in MB/s,
-      title=Intel MPI performance (Infiniband),
+      title=Intel MPI performance,
       legend pos = outer north east,
       scaled ticks = false,
       y tick label style={

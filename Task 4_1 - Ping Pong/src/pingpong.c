@@ -2,7 +2,8 @@
 #include "mpi.h"
 #include <math.h>
 
-#define RUNS 1000
+#define RUNS 100000
+#define BRUNS 100
 
 
 void init (char* arr, int size);
@@ -35,11 +36,12 @@ int main (int argc, char** argv)
 	  fprintf(stderr, "Data does not meet size requirement of 4 byte. It has %i bytes.\n\n", retval);
 	  return 1;
 	}
-      MPI_Barrier(MPI_COMM_WORLD);
-      start=MPI_Wtime ();
       
       if (myid==0)
 	{
+	  MPI_Barrier(MPI_COMM_WORLD);
+	  start=MPI_Wtime ();
+      
 	  //loop for main thread
 	  for (ctr=0; ctr<RUNS; ctr++)
 	    {
@@ -52,6 +54,7 @@ int main (int argc, char** argv)
 	}
       else if (myid==1)
 	{
+	  MPI_Barrier(MPI_COMM_WORLD);
 	  //loop for second thread
 	  for (ctr=0; ctr<RUNS; ctr++)
 	    { 
@@ -63,7 +66,7 @@ int main (int argc, char** argv)
   else if (atoi(argv[1])==1)
     {
       //measure bandwidth
-      printf("Measuring bandwidth\n\nMSGSize [kb] Bandwidth [MB/sec]\n");
+      printf("Measuring bandwidth\n\nMSGSize [kb] Bandwidth [MB/sec]");
       unsigned size = 0;
       for (size;size<=20;size++)
 	{
@@ -79,7 +82,7 @@ int main (int argc, char** argv)
 	  if (myid==0)
 	    {
 	      //loop for main thread
-	      for (ctr=0; ctr<RUNS; ctr++)
+	      for (ctr=0; ctr<BRUNS; ctr++)
 		{
 		  MPI_Send(src, length, MPI_BYTE, 1, 0, MPI_COMM_WORLD);
 		  MPI_Recv(dst, length, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
@@ -87,14 +90,14 @@ int main (int argc, char** argv)
 	      end=MPI_Wtime();
 	      printf("%4.4f %f\n", 
 		     (double)(length*sizeof(char))/1024.0,
-		     (sizeof(char)*length*RUNS*2)/(pow(2,20)*(end-start))
+		     (sizeof(char)*length*BRUNS*2)/(pow(2,20)*(end-start))
 		     );
 	      
 	    }
 	  else if (myid==1)
 	    {
 	      //loop for second thread
-	      for (ctr=0; ctr<RUNS; ctr++)
+	      for (ctr=0; ctr<BRUNS; ctr++)
 		{ 
 		  MPI_Recv(dst, length, MPI_BYTE, 0, 0, MPI_COMM_WORLD, &status);
 		  MPI_Send(src, length, MPI_BYTE, 0, 1, MPI_COMM_WORLD); 
