@@ -6,6 +6,7 @@
 #include "omp.h"
 #include "mmintrin.h"
 #include <papi.h>
+#include "mpi.h"
 
 double* time;
 
@@ -34,13 +35,35 @@ int main(int argc, char *argv[]) {
 
 	// set the visualization resolution
 	param.visres = 100;
-
+	
+	//MPI shith
+	MPI_Status status;
+	int np, myid;
+	MPI_Comm comm;
+	int dim[2], period[2], reorder;
+    int coord[2], id;
+	
+	  if ((retval=MPI_Init (&argc, &argv))!=MPI_SUCCESS)
+    fprintf(stderr, "Error initializing MPI, Errorcode %i", retval); 
+	MPI_Comm_size(MPI_COMM_WORLD, &np);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+	//TODO: adjust dims to useful value from args[]
+	dim[0]= 2; dim[1]=2;
+	//grid -> non periodic
+    period[0]=0; period[1]=0;
+    reorder=0;
+	
+	MPI_Cart_create(MPI_COMM_WORLD, 2, dim, period, reorder, &comm);
+	MPI_Cart_coords(comm, myid, 2, coord);
+	
+	#TODO: MPI_INIT, MPI_Cart_create (2D grid), blablabla 
 	// check arguments
 	if (argc < 2) {
 		usage(argv[0]);
 		return 1;
 	}
 
+	#TODO:only proc1?{
 	// check input file
 	if (!(infile = fopen(argv[1], "r"))) {
 		fprintf(stderr, "\nError: Cannot open \"%s\" for reading.\n\n", argv[1]);
@@ -51,7 +74,6 @@ int main(int argc, char *argv[]) {
 
 	// check result file
 	resfilename = (argc >= 3) ? argv[2] : "heat.ppm";
-
 	if (!(resfile = fopen(resfilename, "w"))) {
 		fprintf(stderr, "\nError: Cannot open \"%s\" for writing.\n\n", resfilename);
 
@@ -66,7 +88,8 @@ int main(int argc, char *argv[]) {
 		usage(argv[0]);
 		return 1;
 	}
-
+	#TODO: broadcast param to all other procs}
+	#TODO: all other procs receive param and save
 	print_params(&param);
 	time = (double *) calloc(sizeof(double), (int) (param.max_res - param.initial_res + param.res_step_size) / param.res_step_size);
 
@@ -91,11 +114,13 @@ int main(int argc, char *argv[]) {
 		np = param.act_res + 2;
 
 		t0 = gettime();
-
+		#TODO: compute chunksize in x, y and chunk offset
 		for (iter = 0; iter < param.maxiter; iter++) {
+			#TODO: give chunksize and chunkoffset
 			residual = relax_jacobi(&(param.u), &(param.uhelp), np, np);
+			#TODO: send borders to neighbours
 		}
-
+		#TODO: gather residual
 		t1 = gettime();
 		time[exp_number] = wtime() - time[exp_number];
 
@@ -113,9 +138,10 @@ int main(int argc, char *argv[]) {
 	param.act_res = param.act_res - param.res_step_size;
 
 	coarsen(param.u, param.act_res + 2, param.act_res + 2, param.uvis, param.visres + 2, param.visres + 2);
-
+	#TODO:gather image
 	write_image(resfile, param.uvis, param.visres + 2, param.visres + 2);
 
 	finalize(&param);
+	MPI_Finalize();
 	return 0;
 }
