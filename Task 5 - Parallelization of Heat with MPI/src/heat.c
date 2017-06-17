@@ -118,14 +118,11 @@ int main(int argc, char *argv[]) {
 		MPI_Bcast(&(param.res_step_size), 1, MPI_UNSIGNED_INT, root, comm);
 		MPI_Bcast(&(param.visres), 1, MPI_UNSIGNED_INT, root, comm);
 		
-		#TODO: this correct? it's double pointers after all
-		MPI_Bcast(&(param.u), 1, MPI_DOUBLE, root, comm);
-		MPI_Bcast(&(param.uhelp), 1, MPI_DOUBLE, root, comm);
-		MPI_Bcast(&(param.uvis), 1, MPI_DOUBLE, root, comm);
-		
 		MPI_Bcast(&(param.numsrcs), 1, MPI_UNSIGNED_INT, root, comm);
 		MPI_Bcast(&(param.heatsrcs), sizeof(heatsrc_t), MPI_BYTE, root, comm);
 	}
+	
+	#TODO: set u, uhelp, uvis according to own chunksize?
 	
 	print_params(&param);
 	time = (double *) calloc(sizeof(double), (int) (param.max_res - param.initial_res + param.res_step_size) / param.res_step_size);
@@ -159,7 +156,7 @@ int main(int argc, char *argv[]) {
 			#TODO: receive borders from neighbors
 			//potential deadlock here?
 		}
-		#TODO: gather residual
+		#TODO: gather residual, ideally with MPI_Reduce
 		t1 = gettime();
 		time[exp_number] = wtime() - time[exp_number];
 
@@ -182,9 +179,9 @@ int main(int argc, char *argv[]) {
 	
 	//gather image
 	if(myid != 0) {
-		#TODO: all non-root processes send their image parts to p0?
+		#TODO: all non-root processes send their image parts to p0
 	} else {
-		#TODO: recv image parts, stitch into one?
+		#TODO: recv image parts, MPI_Gather?
 		
 		write_image(resfile, param.uvis, param.visres + 2, param.visres + 2);
 	}
