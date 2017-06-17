@@ -116,7 +116,6 @@ int main(int argc, char *argv[]) {
 		MPI_Bcast(&(param.max_res), 1, MPI_UNSIGNED_INT, root, comm);
 		MPI_Bcast(&(param.initial_res), 1, MPI_UNSIGNED_INT, root, comm);
 		MPI_Bcast(&(param.res_step_size), 1, MPI_UNSIGNED_INT, root, comm);
-		MPI_Bcast(&(param.visres), 1, MPI_UNSIGNED_INT, root, comm);
 		
 		MPI_Bcast(&(param.numsrcs), 1, MPI_UNSIGNED_INT, root, comm);
 		MPI_Bcast(&(param.heatsrcs), sizeof(heatsrc_t), MPI_BYTE, root, comm);
