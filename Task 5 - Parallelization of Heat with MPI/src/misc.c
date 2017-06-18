@@ -26,7 +26,7 @@ int initialize( algoparam_t *param )
     double dist;
 
     // total number of points (including border)
-    const int np = param->act_res + 0;
+    const int np = param->act_res + 2;
 
     //
     // allocate memory
@@ -44,7 +44,7 @@ int initialize( algoparam_t *param )
     	}
     }
 
-    if( !(param->u) || !(param->uhelp) || !(param->uvis) )
+    if( !(param->u) || !(param->uvis) )
     {
 	fprintf(stderr, "Error: Cannot allocate memory\n");
 	return 0;
