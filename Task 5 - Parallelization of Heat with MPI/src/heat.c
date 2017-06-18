@@ -19,7 +19,7 @@ void usage(char *s) {
 }
 
 int main(int argc, char *argv[]) {
-	int i, j, k, ret;
+        int i, j, k, ret, retval;
 	FILE *infile, *resfile;
 	char *resfilename;
 	int np, iter, chkflag;
@@ -37,26 +37,26 @@ int main(int argc, char *argv[]) {
 	
 	//MPI vars
 	MPI_Status status;
-	int np, myid, root;
-	MPI_Comm comm;
+	int nprocs, myid, root;
+	MPI_Comm comm_2d;
 	int dim[2], period[2], reorder;
-    int coord[2], id;
-	
+	int coord[2], id;
+	int myx = 0, myy = 0;
 	if ((retval=MPI_Init (&argc, &argv))!=MPI_SUCCESS)
 		fprintf(stderr, "Error initializing MPI, Errorcode %i", retval); 
-	MPI_Comm_size(MPI_COMM_WORLD, &np);
+	MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 	
-	#TODO: adjust dims to useful value from args[]
+	//TODO: adjust dims to useful value from args[]
 	dim[0]= 2; dim[1]=2;
 	//grid -> non periodic
-    period[0]=0; period[1]=0;
-    reorder=0;
+	period[0]=0; period[1]=0;
+	reorder=0;
 	
-	MPI_Cart_create(MPI_COMM_WORLD, 2, dim, period, reorder, &comm);
-	MPI_Cart_coords(comm, myid, 2, coord);
+	MPI_Cart_create(MPI_COMM_WORLD, 2, dim, period, reorder, &comm_2d);
+	MPI_Cart_coords(comm_2d, myid, 2, coord);
 	
-	#TODO: MPI_INIT, MPI_Cart_create (2D grid), blablabla 
+	//TODO: MPI_INIT, MPI_Cart_create (2D grid), blablabla 
 	// check arguments
 	if (argc < 2) {
 		usage(argv[0]);
@@ -85,14 +85,14 @@ int main(int argc, char *argv[]) {
 		// check input
 		if (!read_input(infile, &param)) {
 			fprintf(stderr, "\nError: Error parsing input file.\n\n");
-
+			
 			usage(argv[0]);
 			return 1;
 		}
 		
-		//broadcast param to all other procs
-	/* REMINDER
-		typedef struct
+		  //broadcast param to all other procs
+		  /* REMINDER
+		     typedef struct
 		{
 			unsigned maxiter;       // maximum number of iterations
 			unsigned act_res;
@@ -111,25 +111,36 @@ int main(int argc, char *argv[]) {
 	*/
 		//to avoid performance deterioration due to a single pointer, 
 		// we send a copy of each attribute
-		MPI_Bcast(&(param.maxiter), 1, MPI_UNSIGNED_INT, root, comm);
-		MPI_Bcast(&(param.act_res), 1, MPI_UNSIGNED_INT, root, comm);
-		MPI_Bcast(&(param.max_res), 1, MPI_UNSIGNED_INT, root, comm);
-		MPI_Bcast(&(param.initial_res), 1, MPI_UNSIGNED_INT, root, comm);
-		MPI_Bcast(&(param.res_step_size), 1, MPI_UNSIGNED_INT, root, comm);
-		
-		MPI_Bcast(&(param.numsrcs), 1, MPI_UNSIGNED_INT, root, comm);
-		MPI_Bcast(&(param.heatsrcs), sizeof(heatsrc_t), MPI_BYTE, root, comm);
-	}
-	
-	#TODO: set u, uhelp, uvis according to own chunksize?
-	
+		MPI_Bcast(&(param.maxiter), 1, MPI_UNSIGNED, root, comm_2d);
+		MPI_Bcast(&(param.act_res), 1, MPI_UNSIGNED, root, comm_2d);
+		MPI_Bcast(&(param.max_res), 1, MPI_UNSIGNED, root, comm_2d);
+		MPI_Bcast(&(param.initial_res), 1, MPI_UNSIGNED, root, comm_2d);
+		MPI_Bcast(&(param.res_step_size), 1, MPI_UNSIGNED, root, comm_2d);
+		MPI_Bcast(&(param.numsrcs), 1, MPI_UNSIGNED, root, comm_2d);
+		MPI_Bcast(&(param.heatsrcs), sizeof(heatsrc_t), MPI_BYTE, root, comm_2d);
+		MPI_Bcast(&(param.proc_x), 1, MPI_UNSIGNED, root, comm_2d);
+		MPI_Bcast(&(param.proc_y), 1, MPI_UNSIGNED, root, comm_2d);
+        }
+	if (np!=((param.proc_x)*(param.proc_y)))
+	  {
+	    fprintf(stderr, "\n Error: Number of processes does not equal number of processes in grid definition");
+	    return 1;
+	  }
+	  //TODO: set u, uhelp, uvis according to own chunksize?
+	  //Konrad: u and uhelp yes. uvis is only needed in process0, as it is the visualization
 	print_params(&param);
 	time = (double *) calloc(sizeof(double), (int) (param.max_res - param.initial_res + param.res_step_size) / param.res_step_size);
 
 	int exp_number = 0;
 
 	for (param.act_res = param.initial_res; param.act_res <= param.max_res; param.act_res = param.act_res + param.res_step_size) {
-		if (!initialize(&param)) {
+	        // calculate gridsize of process
+	        
+
+
+
+
+	        if (!initialize(&param)) {
 			fprintf(stderr, "Error in Jacobi initialization.\n\n");
 
 			usage(argv[0]);
@@ -147,15 +158,15 @@ int main(int argc, char *argv[]) {
 		np = param.act_res + 2;
 
 		t0 = gettime();
-		#TODO: compute chunksize in x, y and chunk offset
+		//TODO: compute chunksize in x, y and chunk offset
 		for (iter = 0; iter < param.maxiter; iter++) {
-			#TODO: give chunksize and chunkoffset
+		  //TODO: give chunksize and chunkoffset
 			residual = relax_jacobi(&(param.u), &(param.uhelp), np, np);
-			#TODO: send borders to neighbours
-			#TODO: receive borders from neighbors
+			//TODO: send borders to neighbours
+			//TODO: receive borders from neighbors
 			//potential deadlock here?
 		}
-		#TODO: gather residual, ideally with MPI_Reduce
+		//TODO: gather residual, ideally with MPI_Reduce
 		t1 = gettime();
 		time[exp_number] = wtime() - time[exp_number];
 
@@ -178,9 +189,9 @@ int main(int argc, char *argv[]) {
 	
 	//gather image
 	if(myid != 0) {
-		#TODO: all non-root processes send their image parts to p0
+	  //TODO: all non-root processes send their image parts to p0
 	} else {
-		#TODO: recv image parts, MPI_Gather?
+	  //TODO: recv image parts, MPI_Gather?
 		
 		write_image(resfile, param.uvis, param.visres + 2, param.visres + 2);
 	}
