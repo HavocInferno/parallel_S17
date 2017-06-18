@@ -28,6 +28,7 @@ typedef struct
     unsigned initial_res;
     unsigned res_step_size;
     unsigned visres;        // visualization resolution
+	unsigned proc_x, proc_y;
   
     double *u, *uhelp;
     double *uvis;

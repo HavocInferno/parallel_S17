@@ -55,8 +55,7 @@ int main(int argc, char *argv[]) {
 	period[0]=0; period[1]=0;
 	reorder=0;
 	
-	MPI_Cart_create(MPI_COMM_WORLD, 2, dim, period, reorder, &comm_2d);
-	MPI_Cart_coords(comm_2d, myid, 2, coord);
+
 	
 	//TODO: MPI_INIT, MPI_Cart_create (2D grid), blablabla 
 	// check arguments
@@ -87,7 +86,7 @@ int main(int argc, char *argv[]) {
 		// check input
 		if (!read_input(infile, &param)) {
 			fprintf(stderr, "\nError: Error parsing input file.\n\n");
-			
+			dim[0]= param.proc_x; dim[1]=param.proc_y;
 			usage(argv[0]);
 			return 1;
 		}
@@ -115,6 +114,10 @@ int main(int argc, char *argv[]) {
 		// we send a copy of each attribute
 		
         }
+	MPI_Cart_create(MPI_COMM_WORLD, 2, dim, period, reorder, &comm_2d);
+	MPI_Cart_coords(comm_2d, myid, 2, coord);	
+		
+		
 	MPI_Bcast(&(param.maxiter), 1, MPI_UNSIGNED, root, comm_2d);
 	MPI_Bcast(&(param.act_res), 1, MPI_UNSIGNED, root, comm_2d);
 	MPI_Bcast(&(param.max_res), 1, MPI_UNSIGNED, root, comm_2d);
@@ -131,7 +134,6 @@ int main(int argc, char *argv[]) {
 	  }
 	  //TODO: set u, uhelp, uvis according to own chunksize?
 	  //Konrad: u and uhelp yes. uvis is only needed in process0, as it is the visualization
-	dim[0]= param.proc_x; dim[1]=param.proc_y;
 	// declare local arrays
 	double* local = malloc (sizeof(double)*(myx+2)*(myy+2));
 	double* local_help = malloc (sizeof(double)*(myx+2)*(myy+2));
@@ -202,12 +204,13 @@ int main(int argc, char *argv[]) {
 		  //TODO: give chunksize and chunkoffset
 			residual = relax_jacobi(&(param.u), &(param.uhelp), myx, myy);
 			MPI_Request dummyRequest;
-			if(cords[0]<dim[0]-1)
+			if(coord[0]<dim[0]-1)
 			{
 				//MPI_SEND send bottom row down
 				//receive bottom row from down
 				int down;
-				MPI_Cart_rank(comm_2d, {cords[0]+1,cords[1]}, &down)
+				int downc[] = {coord[0]+1,coord[1]};
+				MPI_Cart_rank(comm_2d, downc, &down);
 				MPI_Isend(&(param.u)+myx*(myy-2)+1, myx-2, MPI_DOUBLE, down,0, MPI_COMM_WORLD, &dummyRequest);
 				MPI_Irecv(&(param.u)+myx*(myy-1)+1, myx-2, MPI_DOUBLE, down,0, MPI_COMM_WORLD, &dummyRequest);
 			}
@@ -216,17 +219,20 @@ int main(int argc, char *argv[]) {
 				//MPI_SEND send top row up
 				//receive top row from above
 				int up;
-				MPI_Cart_rank(comm_2d, {cords[0]-1,cords[1]}, &up)
+				int upc[] = {coord[0]-1,coord[1]};
+				MPI_Cart_rank(comm_2d, upc, &up);
 				MPI_Isend(&(param.u)+myx+1, myx-2, MPI_DOUBLE, up,1, MPI_COMM_WORLD, &dummyRequest);
 				MPI_Irecv(&(param.u)+1, myx-2, MPI_DOUBLE, up,1, MPI_COMM_WORLD, &dummyRequest);
 			}
-			if(cords[1]<dim[1]-1)
+			int i;
+			if(coord[1]<dim[1]-1)
 			{
 				//MPI_SEND send right row right
 				//receive right row from right
 				int right;
-				MPI_Cart_rank(comm_2d, {cords[0],cords[1]+1}, &right)
-				for (int i = 1; i<myy)
+				int rightc[] = {coord[0],coord[1]+1};
+				MPI_Cart_rank(comm_2d, rightc, &right);
+				for (i = 1; i<myy;i++)
 				{
 					MPI_Isend(&(param.u)+myx*i+myy-2, 1, MPI_DOUBLE, right,2, MPI_COMM_WORLD, &dummyRequest);
 					MPI_Irecv(&(param.u)+myx*i+myy-1, 1, MPI_DOUBLE, right,2, MPI_COMM_WORLD, &dummyRequest);
@@ -237,8 +243,9 @@ int main(int argc, char *argv[]) {
 				//MPI_SEND send left row left
 				//receive left row left above
 				int left;
-				MPI_Cart_rank(comm_2d, {cords[0],cords[1]-1}, &left)
-				for (int i = 1; i<myy)
+				int leftc[] = {coord[0],coord[1]-1};
+				MPI_Cart_rank(comm_2d, leftc, &left);
+				for (i = 1; i<myy;i++)
 				{
 					MPI_Isend(&(param.u)+myx*i+1, 1, MPI_DOUBLE, left,3, MPI_COMM_WORLD, &dummyRequest);
 					MPI_Irecv(&(param.u)+myx*i, 1, MPI_DOUBLE, left,3, MPI_COMM_WORLD, &dummyRequest);
