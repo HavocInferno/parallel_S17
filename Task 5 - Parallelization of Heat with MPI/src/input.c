@@ -61,7 +61,13 @@ int read_input( FILE *infile, algoparam_t *param )
       if( n!=4 )
 	return 0;
     }
-
+  // parse dimension of process grid
+  fgets(buf, BUFSIZE, infile);
+  n = sscanf(buf, "%u %u", &(param->proc_x), &(param->proc_y) );
+  if( n!=1 )
+    return 0;
+  
+  
   return 1;
 }
 

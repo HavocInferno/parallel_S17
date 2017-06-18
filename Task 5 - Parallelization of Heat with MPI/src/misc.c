@@ -26,13 +26,13 @@ int initialize( algoparam_t *param )
     double dist;
 
     // total number of points (including border)
-    const int np = param->act_res + 2;
+    const int np = param->act_res + 0;
 
     //
     // allocate memory
     //
     (param->u)     = (double*)malloc( sizeof(double)* np*np );
-    (param->uhelp) = (double*)malloc( sizeof(double)* np*np );
+    //(param->uhelp) = (double*)malloc( sizeof(double)* np*np );
     (param->uvis)  = (double*)calloc( sizeof(double),
 				      (param->visres+2) *
 				      (param->visres+2) );
@@ -40,7 +40,7 @@ int initialize( algoparam_t *param )
     for (i=0;i<np;i++){
     	for (j=0;j<np;j++){
     		param->u[i*np+j]=0;
-			param->uhelp[i*np+j]=0;
+		//param->uhelp[i*np+j]=0;
     	}
     }
 
