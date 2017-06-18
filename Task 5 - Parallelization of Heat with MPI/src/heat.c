@@ -249,6 +249,8 @@ int main(int argc, char *argv[]) {
 	    //potential deadlock here?
 	  }
 		//TODO: gather residual, ideally with MPI_Reduce
+		double actualResidual;
+		MPI_Reduce(&residual, &actualResidual,1,MPI_DOUBLE,MPI_SUM, root, MPI_COMM_WORLD);
 	  t1 = gettime();
 	  time[exp_number] = wtime() - time[exp_number];
 	  
@@ -256,7 +258,7 @@ int main(int argc, char *argv[]) {
 	    printf("\n\nResolution: %u\n", param.act_res);
 	    printf("===================\n");
 		  printf("Execution time: %f\n", time[exp_number]);
-		  printf("Residual: %f\n\n", residual);
+		  printf("Residual: %f\n\n", actualResidual);
 		  
 		  printf("megaflops:  %.1lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / time[exp_number] / 1000000);
 		  printf("  flop instructions (M):  %.3lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / 1000000);
