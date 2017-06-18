@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	//only proc0 checks file
-	if(myid==0)	{
+	if(myid==root)	{
 		// check input file
 		if (!(infile = fopen(argv[1], "r"))) {
 			fprintf(stderr, "\nError: Cannot open \"%s\" for reading.\n\n", argv[1]);
@@ -114,26 +114,28 @@ int main(int argc, char *argv[]) {
 		// we send a copy of each attribute
 		
         }
+	
+	MPI_Bcast(&(param.maxiter), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
+	MPI_Bcast(&(param.act_res), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
+	MPI_Bcast(&(param.max_res), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
+	MPI_Bcast(&(param.initial_res), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
+	MPI_Bcast(&(param.res_step_size), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
+	MPI_Bcast(&(param.numsrcs), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
+	MPI_Bcast(&(param.heatsrcs), sizeof(heatsrc_t), MPI_BYTE, root, MPI_COMM_WORLD);
+	MPI_Bcast(&(param.proc_x), 1, MPI_INT, root, MPI_COMM_WORLD);
+	MPI_Bcast(&(param.proc_y), 1, MPI_INT, root, MPI_COMM_WORLD);
+	
 	MPI_Cart_create(MPI_COMM_WORLD, 2, dim, period, reorder, &comm_2d);
 	MPI_Cart_coords(comm_2d, myid, 2, coord);	
-		
-		
-	MPI_Bcast(&(param.maxiter), 1, MPI_UNSIGNED, root, comm_2d);
-	MPI_Bcast(&(param.act_res), 1, MPI_UNSIGNED, root, comm_2d);
-	MPI_Bcast(&(param.max_res), 1, MPI_UNSIGNED, root, comm_2d);
-	MPI_Bcast(&(param.initial_res), 1, MPI_UNSIGNED, root, comm_2d);
-	MPI_Bcast(&(param.res_step_size), 1, MPI_UNSIGNED, root, comm_2d);
-	MPI_Bcast(&(param.numsrcs), 1, MPI_UNSIGNED, root, comm_2d);
-	MPI_Bcast(&(param.heatsrcs), sizeof(heatsrc_t), MPI_BYTE, root, comm_2d);
-	MPI_Bcast(&(param.proc_x), 1, MPI_UNSIGNED, root, comm_2d);
-	MPI_Bcast(&(param.proc_y), 1, MPI_UNSIGNED, root, comm_2d);
+	
 	if (np!=((param.proc_x)*(param.proc_y)))
 	  {
 	    fprintf(stderr, "\n Error: Number of processes does not equal number of processes in grid definition");
 	    return 1;
 	  }
-	  //TODO: set u, uhelp, uvis according to own chunksize?
-	  //Konrad: u and uhelp yes. uvis is only needed in process0, as it is the visualization
+	 
+	//TODO: set u, uhelp, uvis according to own chunksize?
+	//Konrad: u and uhelp yes. uvis is only needed in process0, as it is the visualization
 	// declare local arrays
 	double* local = malloc (sizeof(double)*(myx+2)*(myy+2));
 	double* local_help = malloc (sizeof(double)*(myx+2)*(myy+2));
@@ -202,7 +204,7 @@ int main(int argc, char *argv[]) {
 		//TODO: compute chunksize in x, y and chunk offset
 	  for (iter = 0; iter < param.maxiter; iter++) {
 		  //TODO: give chunksize and chunkoffset
-			residual = relax_jacobi(&(param.u), &(param.uhelp), myx, myy);
+			residual = relax_jacobi(&(local), &(local_help), myx, myy);
 			MPI_Request dummyRequest;
 			if(coord[0]<dim[0]-1)
 			{
@@ -211,8 +213,8 @@ int main(int argc, char *argv[]) {
 				int down;
 				int downc[] = {coord[0]+1,coord[1]};
 				MPI_Cart_rank(comm_2d, downc, &down);
-				MPI_Isend(&(param.u)+myx*(myy-2)+1, myx-2, MPI_DOUBLE, down,0, MPI_COMM_WORLD, &dummyRequest);
-				MPI_Irecv(&(param.u)+myx*(myy-1)+1, myx-2, MPI_DOUBLE, down,0, MPI_COMM_WORLD, &dummyRequest);
+				MPI_Isend(&(local)+myx*(myy-2)+1, myx-2, MPI_DOUBLE, down,0, MPI_COMM_WORLD, &dummyRequest);
+				MPI_Irecv(&(local)+myx*(myy-1)+1, myx-2, MPI_DOUBLE, down,0, MPI_COMM_WORLD, &dummyRequest);
 			}
 			if(cord[0]!=0)
 			{
@@ -221,8 +223,8 @@ int main(int argc, char *argv[]) {
 				int up;
 				int upc[] = {coord[0]-1,coord[1]};
 				MPI_Cart_rank(comm_2d, upc, &up);
-				MPI_Isend(&(param.u)+myx+1, myx-2, MPI_DOUBLE, up,1, MPI_COMM_WORLD, &dummyRequest);
-				MPI_Irecv(&(param.u)+1, myx-2, MPI_DOUBLE, up,1, MPI_COMM_WORLD, &dummyRequest);
+				MPI_Isend(&(local)+myx+1, myx-2, MPI_DOUBLE, up,1, MPI_COMM_WORLD, &dummyRequest);
+				MPI_Irecv(&(local)+1, myx-2, MPI_DOUBLE, up,1, MPI_COMM_WORLD, &dummyRequest);
 			}
 			int i;
 			if(coord[1]<dim[1]-1)
@@ -234,8 +236,8 @@ int main(int argc, char *argv[]) {
 				MPI_Cart_rank(comm_2d, rightc, &right);
 				for (i = 1; i<myy;i++)
 				{
-					MPI_Isend(&(param.u)+myx*i+myy-2, 1, MPI_DOUBLE, right,2, MPI_COMM_WORLD, &dummyRequest);
-					MPI_Irecv(&(param.u)+myx*i+myy-1, 1, MPI_DOUBLE, right,2, MPI_COMM_WORLD, &dummyRequest);
+					MPI_Isend(&(local)+myx*i+myy-2, 1, MPI_DOUBLE, right,2, MPI_COMM_WORLD, &dummyRequest);
+					MPI_Irecv(&(local)+myx*i+myy-1, 1, MPI_DOUBLE, right,2, MPI_COMM_WORLD, &dummyRequest);
 				}
 			}
 			if(cord[1]!=0)
@@ -247,8 +249,8 @@ int main(int argc, char *argv[]) {
 				MPI_Cart_rank(comm_2d, leftc, &left);
 				for (i = 1; i<myy;i++)
 				{
-					MPI_Isend(&(param.u)+myx*i+1, 1, MPI_DOUBLE, left,3, MPI_COMM_WORLD, &dummyRequest);
-					MPI_Irecv(&(param.u)+myx*i, 1, MPI_DOUBLE, left,3, MPI_COMM_WORLD, &dummyRequest);
+					MPI_Isend(&(local)+myx*i+1, 1, MPI_DOUBLE, left,3, MPI_COMM_WORLD, &dummyRequest);
+					MPI_Irecv(&(local)+myx*i, 1, MPI_DOUBLE, left,3, MPI_COMM_WORLD, &dummyRequest);
 				}
 			}
 	    //TODO: send borders to neighbours
