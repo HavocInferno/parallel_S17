@@ -125,12 +125,12 @@ int main(int argc, char *argv[]) {
 	MPI_Bcast(&(param.proc_x), 1, MPI_INT, root, MPI_COMM_WORLD);
 	MPI_Bcast(&(param.proc_y), 1, MPI_INT, root, MPI_COMM_WORLD);
 	
-	MPI_Cart_create(MPI_COMM_WORLD, 2, dim, period, reorder, &comm_2d);
+	MPI_Cart_create(MPI_COMM_WORLD, 2, (int[]){4,4}/*dim*/, period, reorder, &comm_2d);
 	MPI_Cart_coords(comm_2d, myid, 2, coord);	
 	
-	if (np!=((param.proc_x)*(param.proc_y)))
+	if (nprocs!=((param.proc_x)*(param.proc_y)))
 	  {
-	    fprintf(stderr, "\n Error: Number of processes does not equal number of processes in grid definition");
+	    fprintf(stderr, "\n Error: Number of processes does not equal number of processes in grid definition (%d)", (param.proc_x)*(param.proc_y));
 	    return 1;
 	  }
 	 
