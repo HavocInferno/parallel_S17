@@ -133,9 +133,19 @@ int main(int argc, char *argv[]) {
 	  //Konrad: u and uhelp yes. uvis is only needed in process0, as it is the visualization
 	dim[0]= param.proc_x; dim[1]=param.proc_y;
 	// declare local arrays
-	double* local = malloc (sizeof(double)*myx*myy);
-	double* local_help = malloc (sizeof(double)*myx*myy);
+	double* local = malloc (sizeof(double)*(myx+2)*(myy+2));
+	double* local_help = malloc (sizeof(double)*(myx+2)*(myy+2));
 	
+	// init local array
+	int m, n;
+	for (m=0; m<(myy+2); m++)
+	  {
+	    for (n=0; n<(myx+2); n++)
+	    {
+	      local[m*myx+n]=0;
+	      local_help[m*myx+n]=0;
+	    }
+	  }
 	print_params(&param);
 	time = (double *) calloc(sizeof(double), (int) (param.max_res - param.initial_res + param.res_step_size) / param.res_step_size);
 
@@ -143,74 +153,78 @@ int main(int argc, char *argv[]) {
 	int* sendcounts=malloc((sizeof(int))*param.proc_x*param.proc_y);
 	int* displs=malloc((sizeof(int))*param.proc_x*param.proc_y);
 	for (param.act_res = param.initial_res; param.act_res <= param.max_res; param.act_res = param.act_res + param.res_step_size) {
-	        // calculate gridsize of process
-	        myx=param.act_res/param.proc_x;
-		myy=param.act_res/param.proc_y;
-		
-		// implement handling for act_res%proc_n!=0
-		if ((param.act_res%param.proc_x)<myid)
-		  myx++;
-		if ((param.act_res%param.proc_y)<myid)
-		  myy++;
-		// scatter initialized values from process root
-		int a;
-		int cord [2];
-		for (a=0; a<(param.proc_x*param.proc_y); a++)
+	  // calculate gridsize of process
+	  myx=param.act_res/param.proc_x;
+	  myy=param.act_res/param.proc_y;
+	  
+	  // implement handling for act_res%proc_n!=0
+	  
+	  // TODO!!!
+	  
+	  // scatter initialized values from process root
+	  int a;
+	  int cord [2];
+	  for (a=0; a<(param.proc_x*param.proc_y); a++)
 		  {
-		    MPI_Cart_coords(comm_2d, a, 2, cord);
-		    displs[a]=cord[0]*myx+cord[1]*param.act_res*myy; // same as below
-		    sendcounts[a]=myx; // CHANGE TO ACTUAL LENGTH OF ARRAY, WRONG FOR BORDERS
+		    MPI_Cart_coords(comm_2d, a, 2, cord);   // only works if every chunk has same size! 
+		    displs[a]=cord[0]*myx+cord[1]*param.act_res*myy;   // only works if every chunk has same size! 
+		    sendcounts[a]=myx; // only works if every line in local array has same length, which should be true
 		  } 
-		
-		MPI_Scatterv(&(param.u), sendcounts, displs, MPI_DOUBLE, local, myx, MPI_DOUBLE, root, comm_2d); 
-
-		
-		if (myid==root)
-		  {
-		    if (!initialize(&param)) {
+	  int line;
+	  for (line=0; line<myy; line++)
+	    {
+	      MPI_Scatterv((&(param.u)+line*param.act_res), sendcounts, displs, MPI_DOUBLE, &(local[1+myx+line*myx]), myx, MPI_DOUBLE, root, comm_2d);  // only works if every chunk has same size! 
+	    }
+	  
+	  if (myid==root)
+	    {
+	      if (!initialize(&param)) {
 		      fprintf(stderr, "Error in Jacobi initialization.\n\n");
 		      
 		      usage(argv[0]);
-		    }
-		  }
-		for (i = 0; i < param.act_res + 2; i++) {
-		  for (j = 0; j < param.act_res + 2; j++) {
+	      }
+	    }
+	  /*
+	    for (i = 0; i < param.act_res + 2; i++) {
+	    for (j = 0; j < param.act_res + 2; j++) {
 		    param.uhelp[i * (param.act_res + 2) + j] = param.u[i * (param.act_res + 2) + j];
-		  }
-		}
-		
-		// starting time
-		time[exp_number] = wtime();
-		residual = 999999999;
-		np = param.act_res + 2;
-		
-		t0 = gettime();
+		    }
+		    }
+	  */
+	  // starting time
+	  time[exp_number] = wtime();
+	  residual = 999999999;
+	  np = param.act_res + 2;
+	  
+	  t0 = gettime();
 		//TODO: compute chunksize in x, y and chunk offset
-		for (iter = 0; iter < param.maxiter; iter++) {
-		  //TODO: give chunksize and chunkoffset
-		  residual = relax_jacobi(&(param.u), &(param.uhelp), np, np);
-		  //TODO: send borders to neighbours
-		  //TODO: receive borders from neighbors
-		  //potential deadlock here?
-		}
+	  for (iter = 0; iter < param.maxiter; iter++) {
+	    //TODO: give chunksize and chunkoffset
+	    residual = relax_jacobi(&(param.u), &(param.uhelp), np, np);
+	    //TODO: send borders to neighbours
+	    //TODO: receive borders from neighbors
+	    //potential deadlock here?
+	  }
 		//TODO: gather residual, ideally with MPI_Reduce
-		t1 = gettime();
-		time[exp_number] = wtime() - time[exp_number];
-		
-		if(myid == root) {
-		  printf("\n\nResolution: %u\n", param.act_res);
-		  printf("===================\n");
+	  t1 = gettime();
+	  time[exp_number] = wtime() - time[exp_number];
+	  
+	  if(myid == root) {
+	    printf("\n\nResolution: %u\n", param.act_res);
+	    printf("===================\n");
 		  printf("Execution time: %f\n", time[exp_number]);
 		  printf("Residual: %f\n\n", residual);
-
+		  
 		  printf("megaflops:  %.1lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / time[exp_number] / 1000000);
 		  printf("  flop instructions (M):  %.3lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / 1000000);
-		}
-		
+	  }
+	  
 		exp_number++;
 	}
 	free(sendcounts);
 	free(displs);
+	free(local);
+	free(local_help);
 	param.act_res = param.act_res - param.res_step_size;
 	
 	coarsen(param.u, param.act_res + 2, param.act_res + 2, param.uvis, param.visres + 2, param.visres + 2);
@@ -220,7 +234,7 @@ int main(int argc, char *argv[]) {
 	  //TODO: all non-root processes send their image parts to p0
 	} else {
 	  //TODO: recv image parts, MPI_Gather?
-		
+	  
 		write_image(resfile, param.uvis, param.visres + 2, param.visres + 2);
 	}
 
