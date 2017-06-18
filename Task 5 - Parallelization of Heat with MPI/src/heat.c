@@ -199,8 +199,51 @@ int main(int argc, char *argv[]) {
 	  t0 = gettime();
 		//TODO: compute chunksize in x, y and chunk offset
 	  for (iter = 0; iter < param.maxiter; iter++) {
-	    //TODO: give chunksize and chunkoffset
-	    residual = relax_jacobi(&(param.u), &(param.uhelp), np, np);
+		  //TODO: give chunksize and chunkoffset
+			residual = relax_jacobi(&(param.u), &(param.uhelp), myx, myy);
+			MPI_Request dummyRequest;
+			if(cords[0]<dim[0]-1)
+			{
+				//MPI_SEND send bottom row down
+				//receive bottom row from down
+				int down;
+				MPI_Cart_rank(comm_2d, {cords[0]+1,cords[1]}, &down)
+				MPI_Isend(&(param.u)+myx*(myy-2)+1, myx-2, MPI_DOUBLE, down,0, MPI_COMM_WORLD, &dummyRequest);
+				MPI_Irecv(&(param.u)+myx*(myy-1)+1, myx-2, MPI_DOUBLE, down,0, MPI_COMM_WORLD, &dummyRequest);
+			}
+			if(cord[0]!=0)
+			{
+				//MPI_SEND send top row up
+				//receive top row from above
+				int up;
+				MPI_Cart_rank(comm_2d, {cords[0]-1,cords[1]}, &up)
+				MPI_Isend(&(param.u)+myx+1, myx-2, MPI_DOUBLE, up,1, MPI_COMM_WORLD, &dummyRequest);
+				MPI_Irecv(&(param.u)+1, myx-2, MPI_DOUBLE, up,1, MPI_COMM_WORLD, &dummyRequest);
+			}
+			if(cords[1]<dim[1]-1)
+			{
+				//MPI_SEND send right row right
+				//receive right row from right
+				int right;
+				MPI_Cart_rank(comm_2d, {cords[0],cords[1]+1}, &right)
+				for (int i = 1; i<myy)
+				{
+					MPI_Isend(&(param.u)+myx*i+myy-2, 1, MPI_DOUBLE, right,2, MPI_COMM_WORLD, &dummyRequest);
+					MPI_Irecv(&(param.u)+myx*i+myy-1, 1, MPI_DOUBLE, right,2, MPI_COMM_WORLD, &dummyRequest);
+				}
+			}
+			if(cord[1]!=0)
+			{
+				//MPI_SEND send left row left
+				//receive left row left above
+				int left;
+				MPI_Cart_rank(comm_2d, {cords[0],cords[1]-1}, &left)
+				for (int i = 1; i<myy)
+				{
+					MPI_Isend(&(param.u)+myx*i+1, 1, MPI_DOUBLE, left,3, MPI_COMM_WORLD, &dummyRequest);
+					MPI_Irecv(&(param.u)+myx*i, 1, MPI_DOUBLE, left,3, MPI_COMM_WORLD, &dummyRequest);
+				}
+			}
 	    //TODO: send borders to neighbours
 	    //TODO: receive borders from neighbors
 	    //potential deadlock here?
