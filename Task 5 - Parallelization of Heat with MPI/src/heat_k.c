@@ -92,29 +92,45 @@ int main(int argc, char *argv[]) {
 	MPI_Bcast(&(param.initial_res), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
 	MPI_Bcast(&(param.res_step_size), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
 	MPI_Bcast(&(param.numsrcs), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
-	
-	// allocate array for heatsrcs, bcast one by one? or create type.
 
-	fprintf(stderr, "before malloc");
+
+	/* DEFINE TYPE FOR HEATSRCS
+	   MPI_Datatype heatsrctype;
+	   MPI_Datatype oldtypes [4];
+	   int count = 4;
+	   int blocklens [4] = {1,1,1,1};
+	   int displs [4];
+	   oldtypes [0]= MPI_FLOAT; displs[0]=(MPI_Aint)0;
+	   oldtypes [1]= MPI_FLOAT; displs[1]=(MPI_Aint)0+sizeof(float);
+	   oldtypes [2]= MPI_FLOAT; displs[2]=(MPI_Aint)0+2*sizeof(float);
+	   oldtypes [3]= MPI_FLOAT; displs[3]=(MPI_Aint)0+3*sizeof(float);
+	   
+	   MPI_Type_struct (count, blocklens, displs, oldtypes, &heatsrctype);
+	   // allocate array for heatsrcs, bcast one by one? or create type.
+	   MPI_Type_commit (&heatsrctype);
+	*/
 	if (myid!=root)
 	  {
 	    // this should work, right?
 	    (param.heatsrcs)=(heatsrc_t*) malloc(sizeof(heatsrc_t)*param.numsrcs);
-	  
 	    
-	    int z;
+	  }  
+	int z;
 	
-	    for (z=0; z<param.numsrcs; z++)
+	for (z=0; z<param.numsrcs; z++)
+	  {
+	    if (myid!=root)
 	      {
 		param.heatsrcs[z].posx=0;
 		param.heatsrcs[z].posy=0;
 		param.heatsrcs[z].range=0;
 		param.heatsrcs[z].temp=0;
-		//MPI_Bcast(&(param.heat), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
-		
-		// some how, some way, distribute heatsrcs to all processes
 	      }
+	    //MPI_Bcast(&(param.heatsrcs[z]), 1, heatsrctype, root, MPI_COMM_WORLD);		
+	    // some how, some way, distribute heatsrcs to all processes
 	  }
+	
+	
 	MPI_Bcast(&(param.proc_x), 1, MPI_INT, root, MPI_COMM_WORLD);
 	MPI_Bcast(&(param.proc_y), 1, MPI_INT, root, MPI_COMM_WORLD);
 	dim[0]= param.proc_x; dim[1]=param.proc_y;
