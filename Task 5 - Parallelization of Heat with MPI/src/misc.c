@@ -32,7 +32,7 @@ int initialize( algoparam_t *param )
     // allocate memory
     //
     (param->u)     = (double*)malloc( sizeof(double)* np*np );
-    //(param->uhelp) = (double*)malloc( sizeof(double)* np*np );
+    (param->uhelp) = (double*)malloc( sizeof(double)* np*np );
     (param->uvis)  = (double*)calloc( sizeof(double),
 				      (param->visres+2) *
 				      (param->visres+2) );
@@ -40,81 +40,81 @@ int initialize( algoparam_t *param )
     for (i=0;i<np;i++){
     	for (j=0;j<np;j++){
     		param->u[i*np+j]=0;
-		//param->uhelp[i*np+j]=0;
+			param->uhelp[i*np+j]=0;
     	}
     }
 
-    if( !(param->u) || !(param->uvis) )
+    if( !(param->u) || !(param->uvis) || !(param->uhelp) )
     {
-	fprintf(stderr, "Error: Cannot allocate memory\n");
-	return 0;
+		fprintf(stderr, "Error: Cannot allocate memory\n");
+		return 0;
     }
 
     for( i=0; i<param->numsrcs; i++ )
     {
-	/* top row */
-	for( j=0; j<np; j++ )
-	{
-	    dist = sqrt( pow((double)j/(double)(np-1) -
-			     param->heatsrcs[i].posx, 2)+
-			 pow(param->heatsrcs[i].posy, 2));
+		/* top row */
+		for( j=0; j<np; j++ )
+		{
+			dist = sqrt( pow((double)j/(double)(np-1) -
+					 param->heatsrcs[i].posx, 2)+
+				 pow(param->heatsrcs[i].posy, 2));
 
-	    if( dist <= param->heatsrcs[i].range )
-	    {
-		(param->u)[j] +=
-		    (param->heatsrcs[i].range-dist) /
-		    param->heatsrcs[i].range *
-		    param->heatsrcs[i].temp;
-	    }
-	}
+			if( dist <= param->heatsrcs[i].range )
+			{
+			(param->u)[j] +=
+				(param->heatsrcs[i].range-dist) /
+				param->heatsrcs[i].range *
+				param->heatsrcs[i].temp;
+			}
+		}
 
-	/* bottom row */
-	for( j=0; j<np; j++ )
-	{
-	    dist = sqrt( pow((double)j/(double)(np-1) -
-			     param->heatsrcs[i].posx, 2)+
-			 pow(1-param->heatsrcs[i].posy, 2));
+		/* bottom row */
+		for( j=0; j<np; j++ )
+		{
+			dist = sqrt( pow((double)j/(double)(np-1) -
+					 param->heatsrcs[i].posx, 2)+
+				 pow(1-param->heatsrcs[i].posy, 2));
 
-	    if( dist <= param->heatsrcs[i].range )
-	    {
-		(param->u)[(np-1)*np+j]+=
-		    (param->heatsrcs[i].range-dist) /
-		    param->heatsrcs[i].range *
-		    param->heatsrcs[i].temp;
-	    }
-	}
+			if( dist <= param->heatsrcs[i].range )
+			{
+			(param->u)[(np-1)*np+j]+=
+				(param->heatsrcs[i].range-dist) /
+				param->heatsrcs[i].range *
+				param->heatsrcs[i].temp;
+			}
+		}
 
-	/* leftmost column */
-	for( j=1; j<np-1; j++ )
-	{
-	    dist = sqrt( pow(param->heatsrcs[i].posx, 2)+
-			 pow((double)j/(double)(np-1) -
-			     param->heatsrcs[i].posy, 2));
+		/* leftmost column */
+		for( j=1; j<np-1; j++ )
+		{
+			dist = sqrt( pow(param->heatsrcs[i].posx, 2)+
+				 pow((double)j/(double)(np-1) -
+					 param->heatsrcs[i].posy, 2));
 
-	    if( dist <= param->heatsrcs[i].range )
-	    {
-		(param->u)[ j*np ]+=
-		    (param->heatsrcs[i].range-dist) /
-		    param->heatsrcs[i].range *
-		    param->heatsrcs[i].temp;
-	    }
-	}
+			if( dist <= param->heatsrcs[i].range )
+			{
+			(param->u)[ j*np ]+=
+				(param->heatsrcs[i].range-dist) /
+				param->heatsrcs[i].range *
+				param->heatsrcs[i].temp;
+			}
+		}
 
-	/* rightmost column */
-	for( j=1; j<np-1; j++ )
-	{
-	    dist = sqrt( pow(1-param->heatsrcs[i].posx, 2)+
-			 pow((double)j/(double)(np-1) -
-			     param->heatsrcs[i].posy, 2));
+		/* rightmost column */
+		for( j=1; j<np-1; j++ )
+		{
+			dist = sqrt( pow(1-param->heatsrcs[i].posx, 2)+
+				 pow((double)j/(double)(np-1) -
+					 param->heatsrcs[i].posy, 2));
 
-	    if( dist <= param->heatsrcs[i].range )
-	    {
-		(param->u)[ j*np+(np-1) ]+=
-		    (param->heatsrcs[i].range-dist) /
-		    param->heatsrcs[i].range *
-		    param->heatsrcs[i].temp;
-	    }
-	}
+			if( dist <= param->heatsrcs[i].range )
+			{
+			(param->u)[ j*np+(np-1) ]+=
+				(param->heatsrcs[i].range-dist) /
+				param->heatsrcs[i].range *
+				param->heatsrcs[i].temp;
+			}
+		}
     }
 
     return 1;
