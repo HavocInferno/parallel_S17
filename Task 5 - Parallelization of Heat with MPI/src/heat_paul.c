@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
 		  usage(argv[0]);
 			return 1;
 		}
+		printf("%d: input files checked\n", myid);
     }
 	
 	//to avoid performance deterioration due to a single pointer, 
@@ -97,13 +98,16 @@ int main(int argc, char *argv[]) {
 	MPI_Bcast(&(param.initial_res), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
 	MPI_Bcast(&(param.res_step_size), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
 	MPI_Bcast(&(param.numsrcs), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
+	//TODO: fix heatsrcs bcast. right now we cast the pointer, but the actual heatsources arent sent...
 	MPI_Bcast(&(param.heatsrcs), sizeof(heatsrc_t), MPI_BYTE, root, MPI_COMM_WORLD);
 	MPI_Bcast(&(param.proc_x), 1, MPI_INT, root, MPI_COMM_WORLD);
 	MPI_Bcast(&(param.proc_y), 1, MPI_INT, root, MPI_COMM_WORLD);
+	printf("%d: bcasts done; initial_res %d\n", myid, param.initial_res);
 	
 	dim[0]=param.proc_x; dim[1]=param.proc_y;
 	MPI_Cart_create(MPI_COMM_WORLD, 2, dim, period, reorder, &comm_2d);
 	MPI_Cart_coords(comm_2d, myid, 2, coord);	
+	printf("%d: Cart created\n", myid);
 	
 	int source, north, south, east, west;
 	MPI_Cart_shift(comm_2d, 0, 1, &west, &east);
@@ -134,11 +138,11 @@ int main(int argc, char *argv[]) {
 			usage(argv[0]);
 		}
 		
-		for (i = 0; i < param.act_res + 2; i++) {
+		/*for (i = 0; i < param.act_res + 2; i++) {
 			for (j = 0; j < param.act_res + 2; j++) {
 				param.uhelp[i * (param.act_res + 2) + j] = param.u[i * (param.act_res + 2) + j];
 			}
-		}
+		}*/
 		
 		// starting time
 		time[exp_number] = wtime();
@@ -150,6 +154,8 @@ int main(int argc, char *argv[]) {
 		
 		t0 = gettime();
 		
+		printf("%d: init/setup for res %d done\n", myid, param.act_res);
+		printf("%d: u: %p, uhelp: %p, uvis: %p\n", myid, param.u, param.uhelp, param.uvis);
 		for (iter = 0; iter < param.maxiter; iter++) {	
 			residual = relax_jacobi(&(param.u), &(param.uhelp), np, np);
 			//TODO: send borders to neighbours
@@ -173,6 +179,7 @@ int main(int argc, char *argv[]) {
 			printf("megaflops:  %.1lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / time[exp_number] / 1000000);
 			printf("  flop instructions (M):  %.3lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / 1000000);
 		}
+		printf("%d: iter for res %d done\n", myid, param.act_res);
 
 		exp_number++;
 	}

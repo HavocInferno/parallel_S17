@@ -44,7 +44,7 @@ int initialize( algoparam_t *param )
     	}
     }
 
-    if( !(param->u) || !(param->uvis) || !(param->uhelp) )
+    if( !(param->u) || !(param->uhelp) || !(param->uvis) )
     {
 		fprintf(stderr, "Error: Cannot allocate memory\n");
 		return 0;
