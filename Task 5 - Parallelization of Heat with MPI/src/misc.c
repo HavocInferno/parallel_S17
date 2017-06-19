@@ -32,15 +32,14 @@ int initialize( algoparam_t *param )
     // allocate memory
     //
     (param->u)     = (double*)malloc( sizeof(double)* np*np );
-    //(param->uhelp) = (double*)malloc( sizeof(double)* np*np );
+    (param->uhelp) = (double*)malloc( sizeof(double)* np*np );
     (param->uvis)  = (double*)calloc( sizeof(double),
 				      (param->visres+2) *
 				      (param->visres+2) );
-
     for (i=0;i<np;i++){
     	for (j=0;j<np;j++){
     		param->u[i*np+j]=0;
-		//param->uhelp[i*np+j]=0;
+		param->uhelp[i*np+j]=0;
     	}
     }
 
@@ -49,7 +48,6 @@ int initialize( algoparam_t *param )
 	fprintf(stderr, "Error: Cannot allocate memory\n");
 	return 0;
     }
-
     for( i=0; i<param->numsrcs; i++ )
     {
 	/* top row */
@@ -67,7 +65,6 @@ int initialize( algoparam_t *param )
 		    param->heatsrcs[i].temp;
 	    }
 	}
-
 	/* bottom row */
 	for( j=0; j<np; j++ )
 	{
@@ -83,7 +80,6 @@ int initialize( algoparam_t *param )
 		    param->heatsrcs[i].temp;
 	    }
 	}
-
 	/* leftmost column */
 	for( j=1; j<np-1; j++ )
 	{
@@ -99,7 +95,6 @@ int initialize( algoparam_t *param )
 		    param->heatsrcs[i].temp;
 	    }
 	}
-
 	/* rightmost column */
 	for( j=1; j<np-1; j++ )
 	{
