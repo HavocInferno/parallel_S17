@@ -24,100 +24,143 @@ int initialize( algoparam_t *param )
 {
     int i, j;
     double dist;
+    
+    // total number of points (including border), just for subarray (border = ghost cells)
+    if (((param->act_res)%(param->proc_x))==0)
+      (param->arraysize_x)=(param->len_x)=(param->act_res)/(param->proc_x);
+    else
+      {
+	if ((param->row)==((param->proc_x)-1))
+	  {
+	  //last processor in dim x
+	    (param->arraysize_x)=(param->act_res/param->proc_x)+1;
+	    (param->len_x)=(param->act_res)%(param->arraysize_x);
+	  }
+	else
+	  {
+	    (param->arraysize_x)=(param->len_x)=((param->act_res)/(param->proc_x))+1; 
+	  }
+      }
+    
+    if (((param->act_res)%(param->proc_y))==0)
+      (param->arraysize_y)=(param->len_y)=(param->act_res)/(param->proc_y);
+    else
+      {
+	if ((param->col)==((param->proc_y)-1))
+	  {
+	  //last processor in dim y
+	    (param->arraysize_y)=((param->act_res)/(param->proc_y))+1;
+	    (param->len_y)=(param->act_res)%(param->arraysize_y);
+	  }
+	else
+	  {
+	    (param->arraysize_y)=(param->len_y)=((param->act_res)/(param->proc_y))+1; 
+	  }
+      }
 
-    // total number of points (including border)
+    const int npx = (param->arraysize_x)+2;
+    const int npy = (param->arraysize_y)+2;
+    
     const int np = param->act_res + 2;
-
     //
     // allocate memory
     //
-    (param->u)     = (double*)malloc( sizeof(double)* np*np );
-    (param->uhelp) = (double*)malloc( sizeof(double)* np*np );
+    /*  (param->u)     = (double*)malloc( sizeof(double)* np*np );
+	(param->uhelp) = (double*)malloc( sizeof(double)* np*np );
+	(param->uvis)  = (double*)calloc( sizeof(double),
+	(param->visres+2) *
+	(param->visres+2) );
+    */
+    (param->u)     = (double*)malloc( sizeof(double)* npx*npy );
+    (param->uhelp) = (double*)malloc( sizeof(double)* npx*npy );
     (param->uvis)  = (double*)calloc( sizeof(double),
 				      (param->visres+2) *
 				      (param->visres+2) );
 
-    for (i=0;i<np;i++){
-    	for (j=0;j<np;j++){
+    for (i=0;i<npy;i++){
+    	for (j=0;j<npx;j++){
     		param->u[i*np+j]=0;
-			param->uhelp[i*np+j]=0;
+			param->uhelp[i*npx+j]=0;
     	}
     }
 
     if( !(param->u) || !(param->uhelp) || !(param->uvis) )
     {
-		fprintf(stderr, "Error: Cannot allocate memory\n");
-		return 0;
+	fprintf(stderr, "Error: Cannot allocate memory\n");
+	return 0;
     }
-
+    
     for( i=0; i<param->numsrcs; i++ )
     {
-		/* top row */
-		for( j=0; j<np; j++ )
-		{
-			dist = sqrt( pow((double)j/(double)(np-1) -
-					 param->heatsrcs[i].posx, 2)+
-				 pow(param->heatsrcs[i].posy, 2));
-
-			if( dist <= param->heatsrcs[i].range )
-			{
-			(param->u)[j] +=
-				(param->heatsrcs[i].range-dist) /
-				param->heatsrcs[i].range *
-				param->heatsrcs[i].temp;
-			}
+	/* top row */
+      
+      for( j=0; j<np; j++ )
+	{
+	  dist = sqrt( pow((double)j/(double)(np-1) -
+			   param->heatsrcs[i].posx, 2)+
+		       pow(param->heatsrcs[i].posy, 2));
+	  
+	  if( dist <= param->heatsrcs[i].range )
+	    {
+	      (param->u)[j] +=
+		(param->heatsrcs[i].range-dist) /
+		param->heatsrcs[i].range *
+		param->heatsrcs[i].temp;
+	    }
+	}
+    }
+    /* bottom row */
+    
+    for( j=0; j<np; j++ )
+      {
+	dist = sqrt( pow((double)j/(double)(np-1) -
+			 param->heatsrcs[i].posx, 2)+
+		     pow(1-param->heatsrcs[i].posy, 2));
+	
+	if( dist <= param->heatsrcs[i].range )
+	  {
+	    (param->u)[(np-1)*np+j]+=
+	      (param->heatsrcs[i].range-dist) /
+	      param->heatsrcs[i].range *
+	      param->heatsrcs[i].temp;
 		}
-
-		/* bottom row */
-		for( j=0; j<np; j++ )
-		{
-			dist = sqrt( pow((double)j/(double)(np-1) -
-					 param->heatsrcs[i].posx, 2)+
-				 pow(1-param->heatsrcs[i].posy, 2));
-
-			if( dist <= param->heatsrcs[i].range )
-			{
-			(param->u)[(np-1)*np+j]+=
-				(param->heatsrcs[i].range-dist) /
-				param->heatsrcs[i].range *
-				param->heatsrcs[i].temp;
-			}
-		}
-
-		/* leftmost column */
-		for( j=1; j<np-1; j++ )
-		{
-			dist = sqrt( pow(param->heatsrcs[i].posx, 2)+
-				 pow((double)j/(double)(np-1) -
-					 param->heatsrcs[i].posy, 2));
-
-			if( dist <= param->heatsrcs[i].range )
-			{
-			(param->u)[ j*np ]+=
-				(param->heatsrcs[i].range-dist) /
-				param->heatsrcs[i].range *
-				param->heatsrcs[i].temp;
-			}
-		}
-
-		/* rightmost column */
-		for( j=1; j<np-1; j++ )
-		{
-			dist = sqrt( pow(1-param->heatsrcs[i].posx, 2)+
-				 pow((double)j/(double)(np-1) -
-					 param->heatsrcs[i].posy, 2));
-
-			if( dist <= param->heatsrcs[i].range )
-			{
-			(param->u)[ j*np+(np-1) ]+=
-				(param->heatsrcs[i].range-dist) /
-				param->heatsrcs[i].range *
-				param->heatsrcs[i].temp;
-			}
-		}
+      }
+    
+    /* leftmost column */
+    
+    for( j=1; j<np-1; j++ )
+      {
+	dist = sqrt( pow(param->heatsrcs[i].posx, 2)+
+		     pow((double)j/(double)(np-1) -
+			 param->heatsrcs[i].posy, 2));
+	
+	    if( dist <= param->heatsrcs[i].range )
+	      {
+		(param->u)[ j*np ]+=
+		  (param->heatsrcs[i].range-dist) /
+		  param->heatsrcs[i].range *
+		  param->heatsrcs[i].temp;
+	      }
+      }
+    
+    /* rightmost column */
+    for( j=1; j<np-1; j++ )
+      {
+	dist = sqrt( pow(1-param->heatsrcs[i].posx, 2)+
+		     pow((double)j/(double)(np-1) -
+			 param->heatsrcs[i].posy, 2));
+	
+	if( dist <= param->heatsrcs[i].range )
+	  {
+		(param->u)[ j*np+(np-1) ]+=
+		  (param->heatsrcs[i].range-dist) /
+		  param->heatsrcs[i].range *
+		  param->heatsrcs[i].temp;
+	  }
+      }
     }
 
-    return 1;
+return 1;
 }
 
 /*
