@@ -100,20 +100,20 @@ int main(int argc, char *argv[]) {
 	  {
 	    // this should work, right?
 	    (param.heatsrcs)=(heatsrc_t*) malloc(sizeof(heatsrc_t)*param.numsrcs);
-	  }
-	
-	int z;
-	/*
-	for (z=0; z<param.numsrcs; z++)
-	  {
-	    param.heatsrcs[z].posx=0;
-	    param.heatsrcs[z].posy=0;
-	    param.heatsrcs[z].range=0;
-	    param.heatsrcs[z].temp=0;
-	    //MPI_Bcast(&(param.heat), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
+	  
 	    
-	    // some how, some way, distribute heatsrcs to all processes
-	    */
+	    int z;
+	
+	    for (z=0; z<param.numsrcs; z++)
+	      {
+		param.heatsrcs[z].posx=0;
+		param.heatsrcs[z].posy=0;
+		param.heatsrcs[z].range=0;
+		param.heatsrcs[z].temp=0;
+		//MPI_Bcast(&(param.heat), 1, MPI_UNSIGNED, root, MPI_COMM_WORLD);
+		
+		// some how, some way, distribute heatsrcs to all processes
+	      }
 	  }
 	MPI_Bcast(&(param.proc_x), 1, MPI_INT, root, MPI_COMM_WORLD);
 	MPI_Bcast(&(param.proc_y), 1, MPI_INT, root, MPI_COMM_WORLD);
@@ -164,16 +164,19 @@ int main(int argc, char *argv[]) {
 
 		exp_number++;
 	}
-
-	param.act_res = param.act_res - param.res_step_size;
-
-	coarsen(param.u, param.act_res + 2, param.act_res + 2, param.uvis, param.visres + 2, param.visres + 2);
-
-	write_image(resfile, param.uvis, param.visres + 2, param.visres + 2);
+	if (myid==root)
+	  {
+	    param.act_res = param.act_res - param.res_step_size;
+	    
+	    coarsen(param.u, param.act_res + 2, param.act_res + 2, param.uvis, param.visres + 2, param.visres + 2);
+	    
+	    write_image(resfile, param.uvis, param.visres + 2, param.visres + 2);
+	  }
 	if (myid!=root)
 	  free(param.heatsrcs);
 
 	finalize(&param);
 	MPI_Finalize();
+	fprintf(stderr, "\nProcess %d is done\n", myid);
 	return 0;
 }
