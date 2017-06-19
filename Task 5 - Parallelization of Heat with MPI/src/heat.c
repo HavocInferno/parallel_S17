@@ -104,10 +104,14 @@ int main(int argc, char *argv[]) {
 	param.row=coords[0];
 	param.col=coords[1];
 
-
-	print_params(&param);
+	if (myid == root)
+		print_params(&param);
 	time = (double *) calloc(sizeof(double), (int) (param.max_res - param.initial_res + param.res_step_size) / param.res_step_size);
 
+	int source, north, south, east, west;
+	MPI_Cart_shift(comm_2d, 0, 1, &west, &east);
+	MPI_Cart_shift(comm_2d, 1, 1, &north, &south);
+	
 	int exp_number = 0;
 
 	for (param.act_res = param.initial_res; param.act_res <= param.max_res; param.act_res = param.act_res + param.res_step_size) {
@@ -128,11 +132,49 @@ int main(int argc, char *argv[]) {
 		residual = 999999999;
 		globresid = residual;
 		np = param.act_res + 2;
+		
+		int tileSizeX=((np-2)/dim[0])+2;
+		int tileSizeY=((np-2)/dim[1])+2;
+		int tileOffsetX = coords[0]*(tileSizeX-2);
+		int tileOffsetY = coords[1]*(tileSizeY-2);
+		//printf("Proc %d: NP: %d, TilesizeX: %d, TileOffsetX: %d, Last Element: %d \n",myid,np,tileSizeX, tileOffsetX,tileOffsetX+tileSizeX-1);
+
+		if(coords[0]==dim[0]-1)
+		{
+			tileSizeX+=(np-2)%dim[0];
+					}
+		if(coords[1]==dim[1]-1)
+		{
+			tileSizeY+=(np-2)%dim[1];
+		//	printf("Proc %d: NP: %d, TilesizeY: %d, TileOffsetY: %d, Last Element: %d \n",myid,np,tileSizeY, tileOffsetY,tileOffsetY+tileSizeY-1);
+		}
+
+		MPI_Datatype north_south_type;
+		MPI_Type_contiguous(tileSizeX-2, MPI_DOUBLE, &north_south_type);
+		MPI_Type_commit(&north_south_type);
+		// create east-west type
+		MPI_Datatype east_west_type;
+		MPI_Type_vector(tileSizeY-2,1,np,MPI_DOUBLE, &east_west_type);
+		MPI_Type_commit(&east_west_type);
 
 		t0 = gettime();
 
 		for (iter = 0; iter < param.maxiter; iter++) {
-			residual = relax_jacobi(&(param.u), &(param.uhelp), np, np);
+			residual = relax_jacobi(&(param.u), &(param.uhelp), tileSizeX, tileSizeY, tileOffsetX, tileOffsetY, np);
+			
+			
+			MPI_Request reqs[8];
+			MPI_Isend(&param.u[tileOffsetX+1+(tileOffsetY+1)*np] , 1, north_south_type, north, 9, comm_2d, &reqs[0]);
+			MPI_Isend(&param.u[tileOffsetX+1+(tileOffsetY+tileSizeY-2)*np] , 1, north_south_type, south, 9, comm_2d, &reqs[1]);
+			MPI_Isend(&param.u[tileOffsetX+1+(tileOffsetY+1)*np], 1, east_west_type, east, 9, comm_2d, &reqs[2]);
+			MPI_Isend(&param.u[tileOffsetX+tileSizeX-2+(tileOffsetY+1)*np], 1, east_west_type, west, 9, comm_2d, &reqs[3]);
+			MPI_Irecv(&param.u[tileOffsetX+1+(tileOffsetY)*np], 1, north_south_type, north, 9, comm_2d, &reqs[4]);+
+			MPI_Irecv(&param.u[tileOffsetX+1+(tileOffsetY+tileSizeY-1)*np], 1, north_south_type, south, 9, comm_2d, &reqs[5]);
+			MPI_Irecv(&param.u[tileOffsetX+(tileOffsetY+1)*np], 1, east_west_type, east, 9, comm_2d, &reqs[6]);
+			MPI_Irecv(&param.u[tileOffsetX+tileSizeX-1+(tileOffsetY+1)*np], 1, east_west_type, west, 9, comm_2d, &reqs[7]);
+			
+			MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
+			
 			/*	
 				the residual used to be a condition to break. because we use allreduce, all processes have the correct residual and this
 				could very easy be reimplemented. otherwise, reduce would be sufficient to just have a chance to read the residual.
@@ -142,15 +184,16 @@ int main(int argc, char *argv[]) {
 
 		t1 = gettime();
 		time[exp_number] = wtime() - time[exp_number];
-
-		printf("\n\nResolution: %u\n", param.act_res);
-		printf("===================\n");
-		printf("Execution time: %f\n", time[exp_number]);
-		printf("Residual: %f\n", residual);
-		printf("Global Residual: %f\n\n", globresid);
-		printf("megaflops:  %.1lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / time[exp_number] / 1000000);
-		printf("  flop instructions (M):  %.3lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / 1000000);
-
+		if(myid == root)
+		{
+			printf("\n\nResolution: %u\n", param.act_res);
+			printf("===================\n");
+			printf("Execution time: %f\n", time[exp_number]);
+			printf("Residual: %f\n", residual);
+			printf("Global Residual: %f\n\n", globresid);
+			printf("megaflops:  %.1lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / time[exp_number] / 1000000);
+			printf("  flop instructions (M):  %.3lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / 1000000);
+		}
 		exp_number++;
 	}
 	if (myid==root)
