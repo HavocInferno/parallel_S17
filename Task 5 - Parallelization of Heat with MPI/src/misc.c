@@ -61,6 +61,8 @@ int initialize( algoparam_t *param )
     (param->offs_y)=(param->row)*(param->arraysize_y);
     const int npx = (param->arraysize_x)+2;
     const int npy = (param->arraysize_y)+2;
+    const int spx = (param->len_x)+2;
+    const int spy = (param->len_y)+2;
     
     const int np = param->act_res + 2;
     //
@@ -92,8 +94,8 @@ int initialize( algoparam_t *param )
       int c_y=(param->row)*(param->arraysize_y);
       if ((param->row)==0)
 	{
-	  for( j=0; j<npx; j++ ) //was np
-		{
+	  for( j=0; j<spx; j++ ) //was np
+	    { 
 		  dist = sqrt (pow((double)(j+c_x)/(double)(np-1) -
 				    param->heatsrcs[i].posx, 2)+
 				pow(param->heatsrcs[i].posy, 2));
@@ -110,7 +112,7 @@ int initialize( algoparam_t *param )
 		// bottom row 
       if ((param->row)==((param->proc_x)-1))
 	{
-	        for( j=0; j<npx; j++ ) // was np
+	  for( j=0; j<spx; j++ ) // was np
 		{
 		  dist = sqrt( pow(((double)j+c_x)/(double)(np-1) -
 					 param->heatsrcs[i].posx, 2)+
@@ -118,7 +120,7 @@ int initialize( algoparam_t *param )
 
 			if( dist <= param->heatsrcs[i].range )
 			{
-			(param->u)[(npy-1)*npx+j]+=
+			  (param->u)[((param->len_x)+2-1)*npx+j]+=
 				(param->heatsrcs[i].range-dist) /
 				param->heatsrcs[i].range *
 				param->heatsrcs[i].temp;
@@ -129,9 +131,11 @@ int initialize( algoparam_t *param )
                 // leftmost column, iterates over rows
       if ((param->col)==0)
 	{
-	  for( j=1; j<npy-1; j++ )   // was np
+	  for( j=0; j<spy; j++ )   // was np
 		{
-			dist = sqrt( pow(param->heatsrcs[i].posx, 2)+
+		  if (!((((param->row)==0)&&(j==0))||(((param->row)==(param->proc_y)-1)&&(j==spy))))
+		    {
+		        dist = sqrt( pow(param->heatsrcs[i].posx, 2)+
 				     pow((double)(j+c_y)/(double)(np-1) -
 					 param->heatsrcs[i].posy, 2));
 
@@ -142,24 +146,29 @@ int initialize( algoparam_t *param )
 				param->heatsrcs[i].range *
 				param->heatsrcs[i].temp;
 			}
+		    }
 		}
 	}
 		// rightmost column, iterates over rows
       if ((param->col)==((param->proc_y)-1))
 	{
-	  for( j=1; j<npy-1; j++ ) // was np
+	  for( j=0; j<spy; j++ ) // was np
 		{
-			dist = sqrt( pow(1-param->heatsrcs[i].posx, 2)+
+		  if (!((((param->row)==0)&&(j==0))||(((param->row)==(param->proc_y)-1)&&(j==spy))))
+		    {
+		   
+                        dist = sqrt( pow(1-param->heatsrcs[i].posx, 2)+
 				     pow((double)(j+c_y)/(double)(np-1) -
 					 param->heatsrcs[i].posy, 2));
 
 			if( dist <= param->heatsrcs[i].range )
 			{
-			(param->u)[ j*npx+(npx-1) ]+=
+			  (param->u)[ j*npx+((param->len_y)+2-1) ]+=
 				(param->heatsrcs[i].range-dist) /
 				param->heatsrcs[i].range *
 				param->heatsrcs[i].temp;
 			}
+		    }
 		}
 	}
     }

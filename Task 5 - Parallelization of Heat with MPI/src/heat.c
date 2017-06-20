@@ -122,22 +122,32 @@ int main(int argc, char *argv[]) {
 		}
 		
 		//---DEBUG ONLY
-		if(param.act_res * param.act_res < 200) {
-		fprintf(stderr,"\np%d: my partial array is\n",myid);
-		for (i = 0; i < param.arraysize_y + 2; i++) {
+		file_free=0;
+		if (myid==root)
+		  file_free=1;
+		else
+		  MPI_Recv(&file_free, 1, MPI_INT, myid-1, 1, MPI_COMM_WORLD, &status);
+		if (file_free=1)
+		  {
+		    if(param.act_res * param.act_res < 200) {
+		      fprintf(stderr,"\np%d: my partial array is\n",myid);
+		      for (i = 0; i < param.arraysize_y + 2; i++) {
 			if(i==1)
-				fprintf(stderr,"---------\n");
+			  fprintf(stderr,"---------\n");
 			for (j = 0; j < param.arraysize_x + 2; j++) {
-				if(j==param.arraysize_x+1 || j==1)
-					fprintf(stderr,"| ");
-				fprintf(stderr,"%d ", param.u[i * (param.arraysize_x + 2) + j]);
+			  if(j==param.arraysize_x+1 || j==1)
+			    fprintf(stderr,"| ");
+			  fprintf(stderr,"%f ", param.u[i * (param.arraysize_x + 2) + j]);
 			}
 			fprintf(stderr,"\n");
 			if(i==param.arraysize_y)
-		fprintf(stderr,"---------\n");
-		}
-		fprintf(stderr,"\n\n");
-		}
+			  fprintf(stderr,"---------\n");
+		      }
+		      fprintf(stderr,"\n\n");
+		    }
+		    if (myid!=nprocs-1)
+		      MPI_Send (&file_free, 1, MPI_INT, myid+1, 1, MPI_COMM_WORLD);
+		  }
 		//---DEBUG ONLY
 		
 		
@@ -221,6 +231,8 @@ int main(int argc, char *argv[]) {
 			printf("Execution time: %f\n", time[exp_number]);
 			printf("Row: %d Column %d\n", param.row, param.col);
 			printf("Offset x: %d Offset y: %d\n",param.offs_x,param.offs_y);
+			printf("Len x: %d Len y: %d\n",param.arraysize_x,param.arraysize_y);
+			printf("Size x: %d Size y: %d\n",param.len_x,param.len_y);
 			printf("Residual: %f\n", residual);
 			printf("Global Residual: %f\n\n", globresid);
 			printf("megaflops:  %.1lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / time[exp_number] / 1000000);
