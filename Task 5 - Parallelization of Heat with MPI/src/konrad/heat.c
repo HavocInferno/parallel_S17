@@ -120,6 +120,27 @@ int main(int argc, char *argv[]) {
 
 			usage(argv[0]);
 		}
+		
+		//---DEBUG ONLY
+		if(param.act_res * param.act_res < 200) {
+		fprintf(stderr,"\np%d: my partial array is\n",myid);
+		for (i = 0; i < param.arraysize_y + 2; i++) {
+			if(i==1)
+				fprintf(stderr,"---------\n");
+			for (j = 0; j < param.arraysize_x + 2; j++) {
+				if(j==param.arraysize_x+1 || j==1)
+					fprintf(stderr,"| ");
+				fprintf(stderr,"%d ", param.u[i * (param.arraysize_x + 2) + j]);
+			}
+			fprintf(stderr,"\n");
+			if(i==param.arraysize_y)
+		fprintf(stderr,"---------\n");
+		}
+		fprintf(stderr,"\n\n");
+		}
+		//---DEBUG ONLY
+		
+		
 		// changed from act_res
 		for (i = 0; i < param.arraysize_y + 2; i++) {
 		for (j = 0; j < param.arraysize_x + 2; j++) {

@@ -78,6 +78,23 @@ int main(int argc, char *argv[]) {
 
 			usage(argv[0]);
 		}
+		
+		//---DEBUG ONLY
+		if(param.act_res * param.act_res < 200) {
+		for (i = 0; i < param.act_res + 2; i++) {
+			if(i==1)
+				printf("---------\n");
+			for (j = 0; j < param.act_res + 2; j++) {
+				if(j==param.act_res+1 || j==1)
+					printf("| ");
+				printf("%d ", param.u[i * (param.act_res + 2) + j]);
+			}
+			printf("\n");
+			if(i==param.act_res)
+				printf("---------\n");
+		}
+		}
+		//---DEBUG ONLY
 
 		for (i = 0; i < param.act_res + 2; i++) {
 			for (j = 0; j < param.act_res + 2; j++) {
