@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 			for (j = 0; j < param.arraysize_x + 2; j++) {
 				if(j==param.arraysize_x+1 || j==1)
 					fprintf(stderr,"| ");
-				fprintf(stderr,"%d ", param.u[i * (param.arraysize_x + 2) + j]);
+				fprintf(stderr,"%f ", param.u[i * (param.arraysize_x + 2) + j]);
 			}
 			fprintf(stderr,"\n");
 			if(i==param.arraysize_y)

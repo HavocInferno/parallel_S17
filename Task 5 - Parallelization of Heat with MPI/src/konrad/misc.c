@@ -88,8 +88,8 @@ int initialize( algoparam_t *param )
     for( i=0; i<param->numsrcs; i++ )
     {
       // top row 
-      int c_x=0;
-      int c_y=0;
+      int c_x=(param->col)*(param->arraysize_x);
+      int c_y=(param->row)*(param->arraysize_y);
       if ((param->row)==0)
 	{
 	  for( j=0; j<npx; j++ ) //was np
