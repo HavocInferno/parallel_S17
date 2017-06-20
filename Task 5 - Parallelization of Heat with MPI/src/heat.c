@@ -187,34 +187,33 @@ int main(int argc, char *argv[]) {
 		//	printf("Proc %d: NP: %d, TilesizeY: %d, TileOffsetY: %d, Last Element: %d \n",myid,np,tileSizeY, tileOffsetY,tileOffsetY+tileSizeY-1);
 		}
 		
+		int npx = param.arraysize_x + 2;
+		int npy = param.arraysize_y + 2;
 		
 		MPI_Datatype north_south_type;
-		MPI_Type_contiguous(tileSizeX-2, MPI_DOUBLE, &north_south_type);
+		MPI_Type_contiguous(param.arraysize_x, MPI_DOUBLE, &north_south_type);
 		MPI_Type_commit(&north_south_type);
 		// create east-west type
 		MPI_Datatype east_west_type;
-		MPI_Type_vector(tileSizeY-2,1,np,MPI_DOUBLE, &east_west_type);
+		MPI_Type_vector(param.arraysize_y,1,npx,MPI_DOUBLE, &east_west_type);
 		MPI_Type_commit(&east_west_type);
 
 		t0 = gettime();
-		int npx = param.arraysize_x + 2;
-		int npy = param.arraysize_y + 2;
 		for (iter = 0; iter < param.maxiter; iter++) {
 		  residual = relax_jacobi(&(param.u), &(param.uhelp), npx, npy, param.len_x, param.len_y);
 			
-		  /*
+		  
 			MPI_Request reqs[8];
-			MPI_Isend(&param.u[tileOffsetX+1+(tileOffsetY+1)*np] , 1, north_south_type, north, 9, comm_2d, &reqs[0]);
-			MPI_Isend(&param.u[tileOffsetX+1+(tileOffsetY+tileSizeY-2)*np] , 1, north_south_type, south, 9, comm_2d, &reqs[1]);
-			MPI_Isend(&param.u[tileOffsetX+1+(tileOffsetY+1)*np], 1, east_west_type, east, 9, comm_2d, &reqs[2]);
-			MPI_Isend(&param.u[tileOffsetX+tileSizeX-2+(tileOffsetY+1)*np], 1, east_west_type, west, 9, comm_2d, &reqs[3]);
-			MPI_Irecv(&param.u[tileOffsetX+1+(tileOffsetY)*np], 1, north_south_type, north, 9, comm_2d, &reqs[4]);+
-			MPI_Irecv(&param.u[tileOffsetX+1+(tileOffsetY+tileSizeY-1)*np], 1, north_south_type, south, 9, comm_2d, &reqs[5]);
-			MPI_Irecv(&param.u[tileOffsetX+(tileOffsetY+1)*np], 1, east_west_type, east, 9, comm_2d, &reqs[6]);
-			MPI_Irecv(&param.u[tileOffsetX+tileSizeX-1+(tileOffsetY+1)*np], 1, east_west_type, west, 9, comm_2d, &reqs[7]);
-			
+			MPI_Isend(&param.u[1+npx] , 1, north_south_type, north, 9, comm_2d, &reqs[0]);
+			MPI_Isend(&param.u[1+param.arraysize_y*npx] , 1, north_south_type, south, 9, comm_2d, &reqs[1]);
+			MPI_Isend(&param.u[1+npx], 1, east_west_type, west, 9, comm_2d, &reqs[2]);
+			MPI_Isend(&param.u[param.arraysize_y+npx], 1, east_west_type, east, 9, comm_2d, &reqs[3]);
+			MPI_Irecv(&param.u[1], 1, north_south_type, north, 9, comm_2d, &reqs[4]);
+			MPI_Irecv(&param.u[1+(param.arraysize_y)*npx+npx], 1, north_south_type, south, 9, comm_2d, &reqs[5]);
+			MPI_Irecv(&param.u[1*npx], 1, east_west_type, east, 9, comm_2d, &reqs[6]);
+			MPI_Irecv(&param.u[param.arraysize_x+1+npx], 1, east_west_type, west, 9, comm_2d, &reqs[7]);
 			MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
-		  */
+		  
 			/*	
 				the residual used to be a condition to break. because we use allreduce, all processes have the correct residual and this
 				could very easy be reimplemented. otherwise, reduce would be sufficient to just have a chance to read the residual.
