@@ -1,4 +1,4 @@
-/*
+#/*
  * heat.h
  *
  * Global definitions for the iterative solver
@@ -33,6 +33,7 @@ typedef struct
     int row, col;
     int arraysize_x, arraysize_y;
     int len_x, len_y;
+    int offs_x, offs_y;
     double *u, *uhelp;
     double *uvis;
 
@@ -62,7 +63,7 @@ void relax_gauss( double *u,
 double residual_jacobi( double *u,
 			unsigned sizex, unsigned sizey );
 double relax_jacobi( double **u, double **utmp,
-		   unsigned sizex, unsigned sizey, unsigned ofx, unsigned ofy , int gridsize);
+		   int sizex, int sizey, int len_x, int len_y);
 
 
 #endif // JACOBI_H_INCLUDED

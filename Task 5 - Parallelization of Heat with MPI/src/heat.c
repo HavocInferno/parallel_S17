@@ -120,10 +120,31 @@ int main(int argc, char *argv[]) {
 
 			usage(argv[0]);
 		}
-
-		for (i = 0; i < param.act_res + 2; i++) {
-			for (j = 0; j < param.act_res + 2; j++) {
-				param.uhelp[i * (param.act_res + 2) + j] = param.u[i * (param.act_res + 2) + j];
+		
+		//---DEBUG ONLY
+		if(param.act_res * param.act_res < 200) {
+		fprintf(stderr,"\np%d: my partial array is\n",myid);
+		for (i = 0; i < param.arraysize_y + 2; i++) {
+			if(i==1)
+				fprintf(stderr,"---------\n");
+			for (j = 0; j < param.arraysize_x + 2; j++) {
+				if(j==param.arraysize_x+1 || j==1)
+					fprintf(stderr,"| ");
+				fprintf(stderr,"%d ", param.u[i * (param.arraysize_x + 2) + j]);
+			}
+			fprintf(stderr,"\n");
+			if(i==param.arraysize_y)
+		fprintf(stderr,"---------\n");
+		}
+		fprintf(stderr,"\n\n");
+		}
+		//---DEBUG ONLY
+		
+		
+		// changed from act_res
+		for (i = 0; i < param.arraysize_y + 2; i++) {
+		for (j = 0; j < param.arraysize_x + 2; j++) {
+				param.uhelp[i * (param.arraysize_x + 2) + j] = param.u[i * (param.arraysize_x + 2) + j];
 			}
 		}
 
@@ -133,12 +154,19 @@ int main(int argc, char *argv[]) {
 		globresid = residual;
 		np = param.act_res + 2;
 		
+
+		
+
+
+
+
+		
 		int tileSizeX=((np-2)/dim[0])+2;
 		int tileSizeY=((np-2)/dim[1])+2;
 		int tileOffsetX = coords[0]*(tileSizeX-2);
 		int tileOffsetY = coords[1]*(tileSizeY-2);
 		//printf("Proc %d: NP: %d, TilesizeX: %d, TileOffsetX: %d, Last Element: %d \n",myid,np,tileSizeX, tileOffsetX,tileOffsetX+tileSizeX-1);
-
+		
 		if(coords[0]==dim[0]-1)
 		{
 			tileSizeX+=(np-2)%dim[0];
@@ -148,7 +176,8 @@ int main(int argc, char *argv[]) {
 			tileSizeY+=(np-2)%dim[1];
 		//	printf("Proc %d: NP: %d, TilesizeY: %d, TileOffsetY: %d, Last Element: %d \n",myid,np,tileSizeY, tileOffsetY,tileOffsetY+tileSizeY-1);
 		}
-
+		
+		
 		MPI_Datatype north_south_type;
 		MPI_Type_contiguous(tileSizeX-2, MPI_DOUBLE, &north_south_type);
 		MPI_Type_commit(&north_south_type);
@@ -158,11 +187,12 @@ int main(int argc, char *argv[]) {
 		MPI_Type_commit(&east_west_type);
 
 		t0 = gettime();
-
+		int npx = param.arraysize_x + 2;
+		int npy = param.arraysize_y + 2;
 		for (iter = 0; iter < param.maxiter; iter++) {
-			residual = relax_jacobi(&(param.u), &(param.uhelp), tileSizeX, tileSizeY, tileOffsetX, tileOffsetY, np);
+		  residual = relax_jacobi(&(param.u), &(param.uhelp), npx, npy, param.len_x, param.len_y);
 			
-			
+		  /*
 			MPI_Request reqs[8];
 			MPI_Isend(&param.u[tileOffsetX+1+(tileOffsetY+1)*np] , 1, north_south_type, north, 9, comm_2d, &reqs[0]);
 			MPI_Isend(&param.u[tileOffsetX+1+(tileOffsetY+tileSizeY-2)*np] , 1, north_south_type, south, 9, comm_2d, &reqs[1]);
@@ -174,7 +204,7 @@ int main(int argc, char *argv[]) {
 			MPI_Irecv(&param.u[tileOffsetX+tileSizeX-1+(tileOffsetY+1)*np], 1, east_west_type, west, 9, comm_2d, &reqs[7]);
 			
 			MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
-			
+		  */
 			/*	
 				the residual used to be a condition to break. because we use allreduce, all processes have the correct residual and this
 				could very easy be reimplemented. otherwise, reduce would be sufficient to just have a chance to read the residual.
@@ -184,11 +214,13 @@ int main(int argc, char *argv[]) {
 
 		t1 = gettime();
 		time[exp_number] = wtime() - time[exp_number];
-		if(myid == root)
+		if(myid >= root)
 		{
-			printf("\n\nResolution: %u\n", param.act_res);
+		        printf("\n\nResolution: %u\n", param.act_res);
 			printf("===================\n");
 			printf("Execution time: %f\n", time[exp_number]);
+			printf("Row: %d Column %d\n", param.row, param.col);
+			printf("Offset x: %d Offset y: %d\n",param.offs_x,param.offs_y);
 			printf("Residual: %f\n", residual);
 			printf("Global Residual: %f\n\n", globresid);
 			printf("megaflops:  %.1lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / time[exp_number] / 1000000);
@@ -196,7 +228,8 @@ int main(int argc, char *argv[]) {
 		}
 		exp_number++;
 	}
-	if (myid==root)
+	// change to ==root, if this should work
+	if (myid>=nprocs)
 	  {
 	    param.act_res = param.act_res - param.res_step_size;
 	    
@@ -204,8 +237,6 @@ int main(int argc, char *argv[]) {
 	    
 	    write_image(resfile, param.uvis, param.visres + 2, param.visres + 2);
 	  }
-	if (myid!=root)
-	  free(param.heatsrcs);
 
 	finalize(&param);
 	MPI_Finalize();

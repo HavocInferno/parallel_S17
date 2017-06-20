@@ -24,23 +24,58 @@ int initialize( algoparam_t *param )
 {
     int i, j;
     double dist;
-
-    // total number of points (including border)
+    
+    // total number of points (including border), just for subarray (border = ghost cells)
+    if (((param->act_res)%(param->proc_x))==0)
+      (param->arraysize_x)=(param->len_x)=(param->act_res)/(param->proc_x);
+    else
+      {
+	if ((param->row)==((param->proc_x)-1))
+	  {
+	  //last processor in dim x
+	    (param->arraysize_x)=(param->act_res/param->proc_x)+1;
+	    (param->len_x)=(param->act_res)%(param->arraysize_x);
+	  }
+	else
+	  {
+	    (param->arraysize_x)=(param->len_x)=((param->act_res)/(param->proc_x))+1; 
+	  }
+      }
+    
+    if (((param->act_res)%(param->proc_y))==0)
+      (param->arraysize_y)=(param->len_y)=(param->act_res)/(param->proc_y);
+    else
+      {
+	if ((param->col)==((param->proc_y)-1))
+	  {
+	  //last processor in dim y
+	    (param->arraysize_y)=((param->act_res)/(param->proc_y))+1;
+	    (param->len_y)=(param->act_res)%(param->arraysize_y);
+	  }
+	else
+	  {
+	    (param->arraysize_y)=(param->len_y)=((param->act_res)/(param->proc_y))+1; 
+	  }
+      }
+    (param->offs_x)=(param->col)*(param->arraysize_x);
+    (param->offs_y)=(param->row)*(param->arraysize_y);
+    const int npx = (param->arraysize_x)+2;
+    const int npy = (param->arraysize_y)+2;
+    
     const int np = param->act_res + 2;
-
     //
     // allocate memory
     //
-    (param->u)     = (double*)malloc( sizeof(double)* np*np );
-    (param->uhelp) = (double*)malloc( sizeof(double)* np*np );
+    (param->u)     = (double*)malloc( sizeof(double)* npx*npy );
+    (param->uhelp) = (double*)malloc( sizeof(double)* npx*npy );
     (param->uvis)  = (double*)calloc( sizeof(double),
 				      (param->visres+2) *
 				      (param->visres+2) );
 
-    for (i=0;i<np;i++){
-    	for (j=0;j<np;j++){
-    		param->u[i*np+j]=0;
-			param->uhelp[i*np+j]=0;
+    for (i=0;i<npx;i++){
+    	for (j=0;j<npy;j++){
+    		param->u[i*npx+j]=0;
+			param->uhelp[i*npx+j]=0;
     	}
     }
 
@@ -52,71 +87,82 @@ int initialize( algoparam_t *param )
 
     for( i=0; i<param->numsrcs; i++ )
     {
-		/* top row */
-		for( j=0; j<np; j++ )
+      // top row 
+      int c_x=(param->col)*(param->arraysize_x);
+      int c_y=(param->row)*(param->arraysize_y);
+      if ((param->row)==0)
+	{
+	  for( j=0; j<npx; j++ ) //was np
 		{
-			dist = sqrt( pow((double)j/(double)(np-1) -
-					 param->heatsrcs[i].posx, 2)+
-				 pow(param->heatsrcs[i].posy, 2));
+		  dist = sqrt (pow((double)(j+c_x)/(double)(np-1) -
+				    param->heatsrcs[i].posx, 2)+
+				pow(param->heatsrcs[i].posy, 2));
 
 			if( dist <= param->heatsrcs[i].range )
 			{
-			(param->u)[j] +=
+			  (param->u)[j] += 
 				(param->heatsrcs[i].range-dist) /
 				param->heatsrcs[i].range *
 				param->heatsrcs[i].temp;
 			}
 		}
-
-		/* bottom row */
-		for( j=0; j<np; j++ )
+	}
+		// bottom row 
+      if ((param->row)==((param->proc_x)-1))
+	{
+	        for( j=0; j<npx; j++ ) // was np
 		{
-			dist = sqrt( pow((double)j/(double)(np-1) -
+		  dist = sqrt( pow(((double)j+c_x)/(double)(np-1) -
 					 param->heatsrcs[i].posx, 2)+
 				 pow(1-param->heatsrcs[i].posy, 2));
 
 			if( dist <= param->heatsrcs[i].range )
 			{
-			(param->u)[(np-1)*np+j]+=
+			(param->u)[(npy-1)*npx+j]+=
 				(param->heatsrcs[i].range-dist) /
 				param->heatsrcs[i].range *
 				param->heatsrcs[i].temp;
 			}
 		}
-
-		/* leftmost column */
-		for( j=1; j<np-1; j++ )
+	}
+		
+                // leftmost column, iterates over rows
+      if ((param->col)==0)
+	{
+	  for( j=1; j<npy-1; j++ )   // was np
 		{
 			dist = sqrt( pow(param->heatsrcs[i].posx, 2)+
-				 pow((double)j/(double)(np-1) -
+				     pow((double)(j+c_y)/(double)(np-1) -
 					 param->heatsrcs[i].posy, 2));
 
 			if( dist <= param->heatsrcs[i].range )
 			{
-			(param->u)[ j*np ]+=
+			(param->u)[ j*npx ]+=
 				(param->heatsrcs[i].range-dist) /
 				param->heatsrcs[i].range *
 				param->heatsrcs[i].temp;
 			}
 		}
-
-		/* rightmost column */
-		for( j=1; j<np-1; j++ )
+	}
+		// rightmost column, iterates over rows
+      if ((param->col)==((param->proc_y)-1))
+	{
+	  for( j=1; j<npy-1; j++ ) // was np
 		{
 			dist = sqrt( pow(1-param->heatsrcs[i].posx, 2)+
-				 pow((double)j/(double)(np-1) -
+				     pow((double)(j+c_y)/(double)(np-1) -
 					 param->heatsrcs[i].posy, 2));
 
 			if( dist <= param->heatsrcs[i].range )
 			{
-			(param->u)[ j*np+(np-1) ]+=
+			(param->u)[ j*npx+(npx-1) ]+=
 				(param->heatsrcs[i].range-dist) /
 				param->heatsrcs[i].range *
 				param->heatsrcs[i].temp;
 			}
 		}
+	}
     }
-
     return 1;
 }
 
