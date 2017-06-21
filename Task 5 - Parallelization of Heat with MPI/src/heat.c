@@ -106,20 +106,6 @@ int main(int argc, char *argv[]) {
 		print_params(&param);
 	time = (double *) calloc(sizeof(double), (int) (param.max_res - param.initial_res + param.res_step_size) / param.res_step_size);
 
-	int source, north, south, east, west;
-	MPI_Cart_shift(comm_2d, 0, 1, &north, &south);
-	MPI_Cart_shift(comm_2d, 1, 1, &west, &east);
-	// hack, do not do this at home!
-	/*	int tmpdim=north;
-	north=west;
-	west=south;
-	south=east;
-	east=tmpdim;
-	tmpdim=west;
-	west=east;
-	east=tmpdim;
-	tmpdim=0;
-	*/
 	int exp_number = 0;
 
 	for (param.act_res = param.initial_res; param.act_res <= param.max_res; param.act_res = param.act_res + param.res_step_size) {
@@ -187,7 +173,7 @@ int main(int argc, char *argv[]) {
 
 		t0 = gettime();
 		for (iter = 0; iter < param.maxiter; iter++) {
-		  residual = relax_jacobi(&(param.u), &(param.uhelp), npx, npy, param.len_x, param.len_y);
+		  residual = relax_jacobi(&(param.u), &(param.uhelp), npx, npy, param.len_x, param.len_y, comm_2d, &north_south_type, &east_west_type);
 		  // prints array after 1 iteration and communication, debug
 		  if (iter==0)
 		    
@@ -216,81 +202,33 @@ int main(int argc, char *argv[]) {
 			  }
 			  if (myid!=nprocs-1)
 			    MPI_Send (&file_free, 1, MPI_INT, myid+1, 1, MPI_COMM_WORLD);
-			}}
+			}
+		    }
 		  
-		  MPI_Barrier(MPI_COMM_WORLD);
-			MPI_Request reqs[8];
-
-			MPI_Isend(&param.u[1+npx] , 1, north_south_type, north, 9, comm_2d, &reqs[0]);
-			
-			MPI_Isend(&param.u[1+param.arraysize_y*npx] , 1, north_south_type, south, 9, comm_2d, &reqs[1]);
-			
-			MPI_Irecv(&param.u[1], 1, north_south_type, north, 9, comm_2d, &reqs[2]);
-
-			MPI_Irecv(&param.u[1+(param.arraysize_y)*npx+npx], 1, north_south_type, south, 9, comm_2d, &reqs[3]);
-
-			MPI_Isend(&param.u[1+npx], 1, east_west_type, west, 9, comm_2d, &reqs[4]);
-			// buggy			
-			MPI_Isend(&param.u[2*npx-2], 1, east_west_type, east, 9, comm_2d, &reqs[5]);
-			
-			MPI_Irecv(&param.u[2*npx-1], 1, east_west_type, east, 9, comm_2d, &reqs[6]);
-			
-			MPI_Irecv(&param.u[npx], 1, east_west_type, west, 9, comm_2d, &reqs[7]);
-			
-			MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
-			
-			if (iter==0)
-		    
-		    {file_free=0;
-		      if (myid==root)
-			file_free=1;
-		      else
-			MPI_Recv(&file_free, 1, MPI_INT, myid-1, 1, MPI_COMM_WORLD, &status);
-		      if (file_free=1)
-			{
-			  if(param.act_res * param.act_res < 200) {
-			    fprintf(stderr,"\np%d: my partial array is\n",myid);
-			    for (i = 0; i < param.arraysize_y + 2; i++) {
-			      if(i==1)
-				fprintf(stderr,"---------\n");
-			      for (j = 0; j < param.arraysize_x + 2; j++) {
-				if(j==param.arraysize_x+1 || j==1)
-				  fprintf(stderr,"| ");
-				fprintf(stderr,"%f ", param.u[i * (param.arraysize_x + 2) + j]);
-			      }
-			      fprintf(stderr,"\n");
-			      if(i==param.arraysize_y)
-				fprintf(stderr,"---------\n");
-			    }
-			    fprintf(stderr,"\n\n");
-			  }
-			  if (myid!=nprocs-1)
-			    MPI_Send (&file_free, 1, MPI_INT, myid+1, 1, MPI_COMM_WORLD);
-			}}
 		  
-			/*	
-				the residual used to be a condition to break. because we use allreduce, all processes have the correct residual and this
-				could very easy be reimplemented. otherwise, reduce would be sufficient to just have a chance to read the residual.
-			*/
-			MPI_Allreduce(&residual, &globresid, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		  /*	
+			the residual used to be a condition to break. because we use allreduce, all processes have the correct residual and this
+			could very easy be reimplemented. otherwise, reduce would be sufficient to just have a chance to read the residual.
+		  */
+		  MPI_Allreduce(&residual, &globresid, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 		}
-
+		
 		t1 = gettime();
 		time[exp_number] = wtime() - time[exp_number];
 		if(myid >= root)
-		{
-		        printf("\n\nResolution: %u\n", param.act_res);
-			printf("===================\n");
-			printf("Execution time: %f\n", time[exp_number]);
-			printf("Row: %d Column %d\n", param.row, param.col);
-			printf("Offset x: %d Offset y: %d\n",param.offs_x,param.offs_y);
-			printf("Len x: %d Len y: %d\n",param.arraysize_x,param.arraysize_y);
-			printf("Size x: %d Size y: %d\n",param.len_x,param.len_y);
-			printf("Residual: %f\n", residual);
-			printf("Global Residual: %f\n\n", globresid);
-			printf("megaflops:  %.1lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / time[exp_number] / 1000000);
-			printf("  flop instructions (M):  %.3lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / 1000000);
-		}
+		  {
+		    printf("\n\nResolution: %u\n", param.act_res);
+		    printf("===================\n");
+		    printf("Execution time: %f\n", time[exp_number]);
+		    printf("Row: %d Column %d\n", param.row, param.col);
+		    printf("Offset x: %d Offset y: %d\n",param.offs_x,param.offs_y);
+		    printf("Len x: %d Len y: %d\n",param.arraysize_x,param.arraysize_y);
+		    printf("Size x: %d Size y: %d\n",param.len_x,param.len_y);
+		    printf("Residual: %f\n", residual);
+		    printf("Global Residual: %f\n\n", globresid);
+		    printf("megaflops:  %.1lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / time[exp_number] / 1000000);
+		    printf("  flop instructions (M):  %.3lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / 1000000);
+		  }
 	
 
 		exp_number++;

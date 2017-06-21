@@ -8,7 +8,7 @@
 #define JACOBI_H_INCLUDED
 
 #include <stdio.h>
-
+#include "mpi.h"
 // configuration
 
 typedef struct
@@ -63,7 +63,7 @@ void relax_gauss( double *u,
 double residual_jacobi( double *u,
 			unsigned sizex, unsigned sizey );
 double relax_jacobi( double **u, double **utmp,
-		   int sizex, int sizey, int len_x, int len_y);
+		     int sizex, int sizey, int len_x, int len_y, MPI_Comm comm_2d, MPI_Datatype* north_south_type, MPI_Datatype* east_west_type);
 
 
 #endif // JACOBI_H_INCLUDED
