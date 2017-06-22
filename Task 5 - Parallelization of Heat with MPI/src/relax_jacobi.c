@@ -10,7 +10,8 @@
 #include "mpi.h"
 //TODO: add x and y offset and chunksize into signature
 double relax_jacobi( double **u1, double **utmp1,
-		     int  sizex, int sizey,int len_x, int len_y, MPI_Comm comm_2d, MPI_Datatype* north_south_type, MPI_Datatype* east_west_type)
+		     int  sizex, int sizey,int len_x, int len_y,
+		     MPI_Comm comm_2d, MPI_Datatype* north_south_type, MPI_Datatype* east_west_type)
 {
   int i, j;
   double *help,*u, *utmp,factor=0.5;
@@ -18,8 +19,8 @@ double relax_jacobi( double **u1, double **utmp1,
   MPI_Comm_rank(comm_2d, &myid);
   MPI_Comm_size(comm_2d, &nprocs);
   int north, south, west, east;
-  MPI_Cart_shift(comm_2d, 0, 1, &north, &south);
-  MPI_Cart_shift(comm_2d, 1, 1, &west, &east);
+  MPI_Cart_shift(comm_2d, 1, 1, &north, &south);
+  MPI_Cart_shift(comm_2d, 0, 1, &west, &east);
   MPI_Status status;
   /*
     MPI_Datatype north_south_type, east_west_type;
@@ -29,15 +30,16 @@ double relax_jacobi( double **u1, double **utmp1,
     MPI_Type_vector(sizey-2, 1, sizex, MPI_DOUBLE, &east_west_type);
     MPI_Type_commit(&east_west_type);
   */
-  
+  fprintf(stderr, "I am processor %d, n: %d, s: %d, w: %d, e: %d\n", myid, north, south, west, east);
   utmp=*utmp1;
   u=*u1;
   double unew, diff, sum=0.0;
   /*
     Send recv, nonblocking
   */
-  
+    
 #ifdef nonblocking
+  
   MPI_Request reqs[8];
   
   MPI_Isend(&u[1+sizex] , 1, *north_south_type, north, 9, comm_2d, &reqs[0]);
@@ -52,9 +54,10 @@ double relax_jacobi( double **u1, double **utmp1,
   
   MPI_Isend(&u[2*sizex-2], 1, *east_west_type, east, 9, comm_2d, &reqs[5]);
   
+  MPI_Irecv(&u[sizex], 1, *east_west_type, west, 9, comm_2d, &reqs[7]);
+
   MPI_Irecv(&u[2*sizex-1], 1, *east_west_type, east, 9, comm_2d, &reqs[6]);
   
-  MPI_Irecv(&u[sizex], 1, *east_west_type, west, 9, comm_2d, &reqs[7]);
 #else
   
   
@@ -98,7 +101,8 @@ double relax_jacobi( double **u1, double **utmp1,
 #ifdef nonblocking
       MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
 #endif
-      for (i=1; i<len_y+1; i++)
+      
+      for (i=1; i<len_x+1; i++)
 	{
 	  // top row
 	  unew = 0.25 * (u[i]+u[sizex-1+i]+u[sizex+1+i]+u[2*sizex+i]);
@@ -107,13 +111,14 @@ double relax_jacobi( double **u1, double **utmp1,
 	  sum+=diff*diff;
 	  
 	  // bottom row
-	  unew = 0;//0.25 * (u[i+(len_y-1)*sizex]+u[len_y*sizex+i-1]+u[len_y*sizex+i+1]+u[(len_y+1)*sizex+i]);
+	  unew = 0.25 * (u[i+(len_y-1)*sizex]+u[len_y*sizex+i-1]+u[len_y*sizex+i+1]+u[(len_y+1)*sizex+i]);
 	  diff = unew - u[(len_y-1)*sizex+sizex+i];
 	  utmp [(len_y-1)*sizex+sizex+i] = unew;
 	  sum+=diff*diff;
 	  
 	}
-      for (i=2; i<len_x; i++)
+      
+      for (i=2; i<len_y; i++)
 	{
 	  int ii=i*sizex;
 	  int iim1=(i-1)*sizex;
@@ -132,12 +137,11 @@ double relax_jacobi( double **u1, double **utmp1,
 	  sum+=diff*diff;		      
 	  
 	}
-    
       *u1=utmp;
       *utmp1=u;
-      
-      //MPI_Barrier(comm_2d);
-      return(sum);
+	
+	//MPI_Barrier(comm_2d);
+	return(sum);
 }
 
 

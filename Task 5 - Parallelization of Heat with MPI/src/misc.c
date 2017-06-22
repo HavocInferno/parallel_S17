@@ -30,7 +30,7 @@ int initialize( algoparam_t *param )
       (param->arraysize_x)=(param->len_x)=(param->act_res)/(param->proc_x);
     else
       {
-	if ((param->row)==((param->proc_x)-1))
+	if ((param->col)==((param->proc_x)-1))
 	  {
 	  //last processor in dim x
 	    (param->arraysize_x)=(param->act_res/param->proc_x)+1;
@@ -46,7 +46,7 @@ int initialize( algoparam_t *param )
       (param->arraysize_y)=(param->len_y)=(param->act_res)/(param->proc_y);
     else
       {
-	if ((param->col)==((param->proc_y)-1))
+	if ((param->row)==((param->proc_y)-1))
 	  {
 	  //last processor in dim y
 	    (param->arraysize_y)=((param->act_res)/(param->proc_y))+1;
@@ -110,7 +110,7 @@ int initialize( algoparam_t *param )
 		}
 	}
 		// bottom row 
-      if ((param->row)==((param->proc_x)-1))
+      if ((param->row)==((param->proc_y)-1))
 	{
 	  for( j=0; j<spx; j++ ) // was np
 		{
@@ -119,8 +119,8 @@ int initialize( algoparam_t *param )
 				 pow(1-param->heatsrcs[i].posy, 2));
 
 			if( dist <= param->heatsrcs[i].range )
-			{
-			  (param->u)[((param->len_x)+2-1)*npx+j]+=
+			  {
+			  (param->u)[((param->len_y)+2-1)*npx+j]+=
 				(param->heatsrcs[i].range-dist) /
 				param->heatsrcs[i].range *
 				param->heatsrcs[i].temp;
@@ -134,7 +134,7 @@ int initialize( algoparam_t *param )
 	  for( j=0; j<spy; j++ )   // was np
 		{
 		  if (!((((param->row)==0)&&(j==0))||(((param->row)==(param->proc_y)-1)&&(j==spy))))
-		    {
+		  {
 		        dist = sqrt( pow(param->heatsrcs[i].posx, 2)+
 				     pow((double)(j+c_y)/(double)(np-1) -
 					 param->heatsrcs[i].posy, 2));
@@ -146,11 +146,11 @@ int initialize( algoparam_t *param )
 				param->heatsrcs[i].range *
 				param->heatsrcs[i].temp;
 			}
-		    }
+		  }
 		}
 	}
 		// rightmost column, iterates over rows
-      if ((param->col)==((param->proc_y)-1))
+      if ((param->col)==((param->proc_x)-1))
 	{
 	  for( j=0; j<spy; j++ ) // was np
 		{
@@ -163,7 +163,7 @@ int initialize( algoparam_t *param )
 
 			if( dist <= param->heatsrcs[i].range )
 			{
-			  (param->u)[ j*npx+((param->len_y)+2-1) ]+=
+			  (param->u)[ j*npx+((param->len_x)+2-1) ]+=
 				(param->heatsrcs[i].range-dist) /
 				param->heatsrcs[i].range *
 				param->heatsrcs[i].temp;
