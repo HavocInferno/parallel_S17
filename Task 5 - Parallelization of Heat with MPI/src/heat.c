@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   
   period[0]=period[1]=0;
-  reorder=0;
+  reorder=1;
   
 	// check arguments
   if (argc < 2) {
@@ -120,7 +120,6 @@ int main(int argc, char *argv[]) {
       usage(argv[0]);
     }
     
-    
       //---DEBUG ONLY, FOR TESTING OF INIT VALUES
     
       file_free=0;
@@ -155,42 +154,39 @@ int main(int argc, char *argv[]) {
     
     
     // changed from act_res
-        for (i = 0; i < param.arraysize_y + 2; i++) {
-      for (j = 0; j < param.arraysize_x + 2; j++) {
-	param.uhelp[i * (param.arraysize_x + 2) + j] = param.u[i * (param.arraysize_x + 2) + j];
+      for (i = 0; i < param.arraysize_y + 2; i++) {
+	for (j = 0; j < param.arraysize_x + 2; j++) {
+	  param.uhelp[i * (param.arraysize_x + 2) + j] = param.u[i * (param.arraysize_x + 2) + j];
+	}
       }
-      }
-    
+      
     // starting time
     time[exp_number] = wtime();
     residual = 999999999;
     globresid = residual;
     np = param.act_res + 2;
+
+    
+    
     
     int npx = param.arraysize_x + 2;
     int npy = param.arraysize_y + 2;
-    
+  
     MPI_Datatype north_south_type;
-    MPI_Type_contiguous(param.arraysize_x, MPI_DOUBLE, &north_south_type);
+    MPI_Type_contiguous(npx-2, MPI_DOUBLE, &north_south_type);
     MPI_Type_commit(&north_south_type);
     // create east-west type
+
     MPI_Datatype east_west_type;
-
-
-
-    //    MPI_Type_vector(npy-2,1,npx,MPI_DOUBLE, &east_west_type);
+   
     MPI_Type_vector(npy-2,1,npx,MPI_DOUBLE, &east_west_type);
-
-
-
-
     MPI_Type_commit(&east_west_type);
+
     t0 = gettime();
     for (iter = 0; iter < param.maxiter; iter++) {
       residual = relax_jacobi(&(param.u), &(param.uhelp), npx, npy, param.len_x, param.len_y, comm_2d, &north_south_type, &east_west_type);
       // prints array after 1 iteration and communication, debug
-      if (iter==1)
-	
+      /*      if (iter==1000)
 	{file_free=0;
 	  if (myid==root)
 	    file_free=1;
@@ -218,7 +214,7 @@ int main(int argc, char *argv[]) {
 		MPI_Send (&file_free, 1, MPI_INT, myid+1, 1, MPI_COMM_WORLD);
 	    }
 	}
-      
+      */      
       
 	/*	
 		the residual used to be a condition to break. because we use allreduce, all processes have the correct residual and this
@@ -260,6 +256,5 @@ int main(int argc, char *argv[]) {
   
   finalize(&param);
   MPI_Finalize();
-  fprintf(stderr, "\nProcess %d is done\n", myid);
   return 0;
 }
