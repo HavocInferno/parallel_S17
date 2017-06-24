@@ -178,23 +178,24 @@ int initialize( algoparam_t *param )
 /*
  * free used memory
  */
-int finalize( algoparam_t *param )
+int finalize( algoparam_t *param, int myid )
 {
+	
     if( param->u ) {
 	free(param->u);
 	param->u = 0;
     }
+	
 
     if( param->uhelp ) {
 	free(param->uhelp);
 	param->uhelp = 0;
     }
-
+	
     if( param->uvis ) {
 	free(param->uvis);
 	param->uvis = 0;
     }
-
     return 1;
 }
 
@@ -251,7 +252,6 @@ void write_image( FILE * f, double *u,
 	}
     }
 
-
     fprintf(f, "P3\n");
     fprintf(f, "%u %u\n", sizex, sizey);
     fprintf(f, "%u\n", 255);
@@ -268,8 +268,13 @@ void write_image( FILE * f, double *u,
 }
 
 int coarsen( double *uold, unsigned oldx, unsigned oldy ,
-	     double *unew, unsigned newx, unsigned newy )
+	     double *unew, unsigned newx, unsigned newy, int offs_x, int offs_y, int len_x, int len_y, int dim_x, int dim_y )
 {
+	//Idea: Compute entire unew for every tile for respective tile only, afterwards reduceall
+	//offs_x and offs_y as well as len_x and len_y define the dimensions of the ACTUAL array elements
+	//dim_x and dim_y define the dimensions of the physical array
+	//uold is the local array, oldx and oldy are the dimensions of the GLOBAL array
+	//newx and newy are the dimensions of the GLOBAL coarsened array
     int i, j, k, l, ii, jj;
 
     int stopx = newx;
@@ -300,8 +305,10 @@ int coarsen( double *uold, unsigned oldx, unsigned oldy ,
           temp = 0;
           for ( k=0; k<stepy; k++ ){
 	       	for ( l=0; l<stepx; l++ ){
-	       		if (ii+k<oldx && jj+l<oldy)
-		           temp += uold[(ii+k)*oldx+(jj+l)] ;
+	       		if (ii+k<oldx && jj+l<oldy 
+					&& ii+k >= offs_x && ii+k < (offs_x+len_x) 
+					&& jj+l >= offs_y && jj+l < (offs_y+len_y))
+		           temp += uold[(ii+k-offs_x)*dim_x+(jj+l-offs_y)] ;
 	        }
 	      }
 	      unew[i*newx+j] = temp / (stepy*stepx);

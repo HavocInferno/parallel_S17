@@ -24,11 +24,9 @@ double relax_jacobi( double **u1, double **utmp1,
   utmp=*utmp1;
   u=*u1;
   double unew, diff, sum=0.0;
-  
+ 
   //  Send recv, nonblocking
-  
-    
-#ifdef nonblocking
+
   
   MPI_Request reqs[8];
   
@@ -38,7 +36,7 @@ double relax_jacobi( double **u1, double **utmp1,
   
   MPI_Irecv(&u[1], 1, *north_south_type, north, 9, comm_2d, &reqs[2]);
   
-  MPI_Irecv(&u[1+(sizey-2)*sizex+sizex], 1, *north_south_type, south, 9, comm_2d, &reqs[3]);
+  MPI_Irecv(&u[1+(sizey-1)*sizex], 1, *north_south_type, south, 9, comm_2d, &reqs[3]);
   
   MPI_Isend(&u[1+sizex], 1, *east_west_type, west, 9, comm_2d, &reqs[4]);
   
@@ -48,17 +46,9 @@ double relax_jacobi( double **u1, double **utmp1,
   
   MPI_Irecv(&u[2*sizex-1], 1, *east_west_type, east, 9, comm_2d, &reqs[6]);
 
-#else
-  
-  //  Send recv, blocking
-  
-  MPI_Sendrecv(&u[1+sizex], 1, *north_south_type, north, 1, &u[1+(sizey-2)*sizex+sizex], 1, *north_south_type, south, 1, comm_2d, &status);
-
-  MPI_Sendrecv(&u[1+(sizey-2)*sizex], 1, *north_south_type, south, 1, &(u[1]), 1, *north_south_type, north, 1, comm_2d, &status);
-  
-  MPI_Sendrecv(&u[1+sizex], 1, *east_west_type, west, 1, &(u[2*sizex-1]), 1, *east_west_type, east, 1, comm_2d, &status);
-
-  MPI_Sendrecv(&u[2*sizex-2], 1, *east_west_type, east, 1, &(u[sizex]), 1, *east_west_type, west, 1, comm_2d, &status);  
+	
+#ifndef nonblocking
+      MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
 #endif
   
   // calculate inner points, which do not depend on borders

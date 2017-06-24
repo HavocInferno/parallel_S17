@@ -47,11 +47,11 @@ algoparam_t;
 
 // misc.c
 int initialize( algoparam_t *param );
-int finalize( algoparam_t *param );
+int finalize( algoparam_t *param, int myid );
 void write_image( FILE * f, double *u,
 		  unsigned sizex, unsigned sizey );
 int coarsen(double *uold, unsigned oldx, unsigned oldy ,
-	    double *unew, unsigned newx, unsigned newy );
+	    double *unew, unsigned newx, unsigned newy, int offs_x, int offs_y, int len_x, int len_y, int dim_x, int dim_y );
 
 // Gauss-Seidel: relax_gauss.c
 double residual_gauss( double *u, double *utmp,
