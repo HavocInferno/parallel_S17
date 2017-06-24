@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
     
     t1 = gettime();
     time[exp_number] = wtime() - time[exp_number];
-    if(myid >= root||1)
+    if(myid == root)
       {
 	printf("\n\nResolution: %u\n", param.act_res);
 	printf("===================\n");
@@ -249,17 +249,43 @@ int main(int argc, char *argv[]) {
     exp_number++;
   }
   // change to ==root, if this should work
-  if (myid>=nprocs)
-    {
-      param.act_res = param.act_res - param.res_step_size;
-      
-      coarsen(param.u, param.act_res + 2, param.act_res + 2, param.uvis, param.visres + 2, param.visres + 2);
-      
-      write_image(resfile, param.uvis, param.visres + 2, param.visres + 2);
-    }
+  param.act_res = param.act_res - param.res_step_size;
   
-  finalize(&param);
+  
+  //offsets for coarsen
+  int ofx = param.offs_x;
+  int ofy = param.offs_y;
+  //lengths for coarsen
+  int lx = param.len_x;
+  int ly = param.len_y;
+  
+  //if tile in first row, increase length, else increase offset
+  if(coords[0] == 0)	{lx+=1;}
+  else 					{ofx+=1;}
+  //if tile in last row, increase length
+  if(coords[0] == (dim[0]-1)) {lx+=1;}
+
+  //same for columns
+  if(coords[1] == 0)	{ly+=1;}
+  else 					{ofy+=1;}
+  if(coords[1] == (dim[1]-1)){ly+=1;}
+  coarsen(param.u, param.act_res + 2, param.act_res + 2, param.uvis, param.visres + 2, param.visres + 2,ofx,ofy,lx,ly,param.arraysize_x + 2,param.arraysize_y + 2);
+  
+  double* globalvis;
+  globalvis  = 	(double*)calloc( sizeof(double),((param.visres+2)*(param.visres+2)) );
+  
+  MPI_Allreduce(param.uvis, globalvis, ((param.visres+2)*(param.visres+2)), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+  if(myid == root)
+  {
+	printf("Process %d is writing the file\n", myid);
+	write_image(resfile, globalvis, param.visres+2, param.visres+2);
+  }
+
+  free(globalvis);
+  finalize(&param, myid);
   MPI_Finalize();
   fprintf(stderr, "\nProcess %d is done\n", myid);
+  printf("Process %d is done\n", myid);
   return 0;
 }
