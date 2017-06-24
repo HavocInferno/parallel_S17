@@ -67,15 +67,15 @@ int initialize( algoparam_t *param )
     const int np = param->act_res + 2;
     //
     // allocate memory
-    //
-    (param->u)     = (double*)malloc( sizeof(double)* npx*npy );
-    (param->uhelp) = (double*)malloc( sizeof(double)* npx*npy );
+    // DEBUG
+    (param->u)     = (double*)malloc( sizeof(double)* npx*npy *1);
+    (param->uhelp) = (double*)malloc( sizeof(double)* npx*npy *1);
     (param->uvis)  = (double*)calloc( sizeof(double),
 				      (param->visres+2) *
 				      (param->visres+2) );
     
-    for (i=0;i<npx;i++){
-    	for (j=0;j<npy;j++){
+    for (i=0;i<npy;i++){
+    	for (j=0;j<npx;j++){
     		param->u[i*npx+j]=0;
 			param->uhelp[i*npx+j]=0;
     	}
