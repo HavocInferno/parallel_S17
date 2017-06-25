@@ -305,13 +305,17 @@ int coarsen( double *uold, unsigned oldx, unsigned oldy ,
           temp = 0;
           for ( k=0; k<stepy; k++ ){
 	       	for ( l=0; l<stepx; l++ ){
-	       		if (ii+k<oldx && jj+l<oldy 
-					&& ii+k >= offs_x && ii+k < (offs_x+len_x) 
-					&& jj+l >= offs_y && jj+l < (offs_y+len_y))
-		           temp += uold[(ii+k-offs_x)*dim_x+(jj+l-offs_y)] ;
+		  if (// ii is posy in oldarray to be used for unew at pos i, jj posx. k is offset for oldarray in y direction, l in x
+		      // checks if ii+k (y pos in old array to be used) is smaller than the length of a line (???), same for jj and l. could be wrong for nonsquares.
+		      ii+k<oldy && jj+l<oldx
+		      // checks if 
+		      && ii+k >= offs_y && ii+k < (offs_y+len_y) 
+		      && jj+l >= offs_x && jj+l < (offs_x+len_x))
+		    temp += uold[(ii+k-offs_y)*dim_x+(jj+l-offs_x)] ;
 	        }
 	      }
-	      unew[i*newx+j] = temp / (stepy*stepx);
+	
+      unew[i*newx+j] = temp / (stepy*stepx);
        }
     }
 
