@@ -19,9 +19,9 @@ The next step was to synchronize the data between the neighboring processes. To 
 
 In the beginning, we did this routine right in heat.c after the call of the relaxation, but optimized it later so that we swapped the data nonblockingly at the beginning of the calculation, calculated the gridpoints which do not rely on data from other processes, which are located at coordinates 2 to np-2. Afterward, we synchronize the communication and calculate the last layer.
 
-\subsection*{Gather the Grid/Output}
+\subsection*{Gather the Output}
 
-Next up is the task to actually print the picture. So far there are two ideas on how to implement this: simple sends or gather operations. This hasn't been implemented yet though.  %Ideen bitte einf\"ugen
+After every process has computed the relaxations on its tiles, the output has to be gathered at the root process.
 
 \subsection*{Current State}
 Right now, our program does parse the data as it should, initialize the local array (incl heatsrc), transfer the ghost cells between neighbors and calculate the residua. Thus far, we have not implemented the graphical output (the picture).
