@@ -71,8 +71,8 @@ int initialize( algoparam_t *param )
     (param->u)     = (double*)malloc( sizeof(double)* npx*npy *1);
     (param->uhelp) = (double*)malloc( sizeof(double)* npx*npy *1);
     (param->uvis)  = (double*)calloc( sizeof(double),
-				      (param->visres+2) *
-				      (param->visres+2) );
+				      (param->visresglobx) *
+				      (param->visresgloby) );
     
     for (i=0;i<npy;i++){
     	for (j=0;j<npx;j++){
@@ -266,29 +266,24 @@ void write_image( FILE * f, double *u,
 	fprintf(f, "\n");
     }
 }
-
 int coarsen( double *uold, unsigned oldx, unsigned oldy ,
-	     double *unew, unsigned newx, unsigned newy, int offs_x, int offs_y, int len_x, int len_y, int dim_x, int dim_y )
+	     double *unew, unsigned newx, unsigned newy,
+	     int sizex, int sizey)
 {
-	//Idea: Compute entire unew for every tile for respective tile only, afterwards reduceall
-	//offs_x and offs_y as well as len_x and len_y define the dimensions of the ACTUAL array elements
-	//dim_x and dim_y define the dimensions of the physical array
-	//uold is the local array, oldx and oldy are the dimensions of the GLOBAL array
-	//newx and newy are the dimensions of the GLOBAL coarsened array
     int i, j, k, l, ii, jj;
 
     int stopx = newx;
     int stopy = newy;
     float temp;
-    float stepx = (float) oldx/(float)newx;
-    float stepy = (float)oldy/(float)newy;
+    float stepx = (float) sizex/(float)newx;
+    float stepy = (float) sizey/(float)newy;
 
-    if (oldx<newx){
-	 stopx=oldx;
+    if (sizex<newx){
+	 stopx=sizex;
 	 stepx=1.0;
     }
-    if (oldy<newy){
-     stopy=oldy;
+    if (sizey<newy){
+     stopy=sizey;
      stepy=1.0;
     }
 
@@ -297,7 +292,7 @@ int coarsen( double *uold, unsigned oldx, unsigned oldy ,
     //printf("rx=%f, ry=%f\n",stepx,stepy);
     // NOTE: this only takes the top-left corner,
     // and doesnt' do any real coarsening
-
+    /*
     for( i=0; i<stopy; i++ ){
        ii=stepy*i;
        for( j=0; j<stopx; j++ ){
@@ -305,19 +300,28 @@ int coarsen( double *uold, unsigned oldx, unsigned oldy ,
           temp = 0;
           for ( k=0; k<stepy; k++ ){
 	       	for ( l=0; l<stepx; l++ ){
-		  if (// ii is posy in oldarray to be used for unew at pos i, jj posx. k is offset for oldarray in y direction, l in x
-		      // checks if ii+k (y pos in old array to be used) is smaller than the length of a line (???), same for jj and l. could be wrong for nonsquares.
-		      ii+k<oldy && jj+l<oldx
-		      // checks if 
-		      && ii+k >= offs_y && ii+k < (offs_y+len_y) 
-		      && jj+l >= offs_x && jj+l < (offs_x+len_x))
-		    temp += uold[(ii+k-offs_y)*dim_x+(jj+l-offs_x)] ;
+	       		if (ii+k<oldx && jj+l<oldy)
+		           temp += uold[(ii+k)*oldx+(jj+l)] ;
 	        }
 	      }
-	
-      unew[i*newx+j] = temp / (stepy*stepx);
+	      unew[i*newx+j] = temp / (stepy*stepx);
        }
     }
-
+    */
+    // TODO: ADJUST FOR PADDED ARRAYS
+    for( i=0; i<stopy; i++ ){
+      ii=stepy*i;
+       for( j=0; j<stopx; j++ ){
+	 jj=stepx*j;
+          temp = 0;
+          for ( k=0; k<stepy; k++ ){
+	    for ( l=0; l<stepx; l++ ){
+		  if (ii+k<sizey && jj+l<sizex)
+			  temp += uold[(ii+k)*sizex+(jj+l)] ;
+	        }
+	  }
+	  unew[i*newx+j] = temp / (stepy*stepx);
+       }
+    }
   return 1;
 }

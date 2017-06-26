@@ -33,8 +33,8 @@ int main(int argc, char *argv[]) {
   double residual;
   double globresid;
   // set the visualization resolution
-  param.visres = 12;
-  
+  param.visres = 100;
+
   // mpi variables
   
   MPI_Status status;
@@ -96,6 +96,17 @@ int main(int argc, char *argv[]) {
 	MPI_Send(&file_free, 1, MPI_INT, myid+1, 1, MPI_COMM_WORLD);
       }
   }
+  if ((param.visres+2)%param.proc_x==0)
+    param.visresx=((param.visres+2)/param.proc_x);
+  else param.visresx =((param.visres+2)/param.proc_x+1);
+
+  if ((param.visres+2)%param.proc_y==0) 
+    param.visresy = ((param.visres+2)/param.proc_y);
+  else param.visresy=((param.visres+2)/param.proc_y+1);
+
+  param.visresglobx=param.visresx*param.proc_x;
+  param.visresgloby=param.visresy*param.proc_y;
+    
   dim[0]= param.proc_x; dim[1]=param.proc_y;
   MPI_Cart_create(MPI_COMM_WORLD, 2, dim, period, reorder, &comm_2d);
   MPI_Cart_coords(comm_2d, myid, 2, coords);
@@ -222,7 +233,8 @@ int main(int argc, char *argv[]) {
       */
       MPI_Allreduce(&residual, &globresid, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     }
-    
+    MPI_Type_free(&north_south_type);
+    MPI_Type_free(&east_west_type);
     t1 = gettime();
     time[exp_number] = wtime() - time[exp_number];
     if(myid == root)
@@ -235,6 +247,7 @@ int main(int argc, char *argv[]) {
 	printf("Offset x: %d Offset y: %d\n",param.offs_x,param.offs_y);
 	printf("Len x: %d Len y: %d\n",param.arraysize_x,param.arraysize_y);
 	printf("Size x: %d Size y: %d\n",param.len_x,param.len_y);
+	printf("Visres x: %d Visres y: %d, Visres globx: %d Visresgloby: %d\n", param.visresx, param.visresy, param.visresglobx, param.visresgloby);
 	printf("Residual: %f\n", residual);
 	printf("Global Residual: %f\n\n", globresid);
 	printf("megaflops:  %.1lf\n", (double) param.maxiter * (np - 2) * (np - 2) * 7 / time[exp_number] / 1000000);
@@ -244,204 +257,102 @@ int main(int argc, char *argv[]) {
     
     exp_number++;
   }
-  // change to ==root, if this should work
   param.act_res = param.act_res - param.res_step_size;
   
-  //  if (param.row==0&&param.col==0) param.u[(param.arraysize_x+2)*(param.arraysize_y+2-1)-1-1]=200;
-  //offsets for coarsen
-  int ofx = param.offs_x;
-  int ofy = param.offs_y;
-  //lengths for coarsen
-  int lx = param.len_x;
-  int ly = param.len_y;
-  // change back?
-  //if tile in first row, increase length, else increase offset
-  if (param.row == 0) ly+=1;
-  else 	ofy+=1;
-  //if tile in last row, increase length
-  if(param.row == (param.proc_y-1)) {ly+=1;}
-
-  //same for columns
-  if(param.col == 0)  lx+=1;
-  else 	ofx+=1;
-  if(param.col == (param.proc_x-1)) lx+=1;
   
-
-  /*
-  file_free=0;
-  if (myid==root)
-    file_free=1;
-  else
-    MPI_Recv(&file_free, 1, MPI_INT, myid-1, 1, MPI_COMM_WORLD, &status);
-  if (file_free=1)
+  
+  double *uloc=(double*)calloc(param.visresx*param.visresy, sizeof(double));
+  coarsen(param.u, param.act_res + 2, param.act_res + 2, uloc, param.visresx, param.visresy, param.len_x+2, param.len_y+2);
+  
+  // Now we need to gather the data. Sending part is simple - (visresx*visresy) MPI_Doubles
+  // Receiving is more difficult. We need to do MPI_Type_create_subarray and resize them, so we can use doubles as offsets.
+  MPI_Datatype subarray, subarray_resized;
+  int sizes[2];
+  sizes [0] = param.visresgloby;
+  sizes [1] = param.visresglobx;
+  int subsizes[2];
+  subsizes [0] = param.visresy;
+  subsizes [1] = param.visresx;
+  int starts[2]= {0,0};
+  int order;
+  int* displs=(int*) malloc (nprocs*sizeof(int));
+  int* counts=(int*) malloc (nprocs*sizeof(int));
+  int cords[2];
+  
+  int a;
+  for (a=0; a<nprocs; a++)
     {
-      fprintf(stderr, "Hey, i am at row %d, column %d\n", param.row, param.col);
-      fprintf(stderr, "My Offset is: x %d y %d\n", ofx, ofy);
-      fprintf(stderr, "My length is: x %d y %d\n", lx, ly);
-      fprintf(stderr, "Last coords read are: x %d y %d\n", -1, -1);
+      counts[a]=1;
+      MPI_Cart_coords(comm_2d, a, 2, cords);
+      displs[a]=cords[0]*param.visresx+cords[1]*param.visresy*param.visresglobx/*TODO*/; //TODO
+    }
+  MPI_Type_create_subarray(2, sizes, subsizes, starts, MPI_ORDER_C, MPI_DOUBLE, &subarray);
+  MPI_Type_commit(&subarray);
+  MPI_Type_create_resized(subarray, 0, 1*sizeof(double), &subarray_resized);
+  MPI_Type_commit(&subarray_resized);
+  
+  MPI_Gatherv(uloc, param.visresx*param.visresy, MPI_DOUBLE, param.uvis, counts, displs, subarray_resized, root, comm_2d);
+  
+  MPI_Type_free(&subarray_resized);
+  MPI_Type_free(&subarray);
+  MPI_Barrier(comm_2d);
+  file_free=0;
+  if (myid==root)	{
+    if(param.act_res * param.act_res < 200) {
+      fprintf(stderr,"\np%d: my coarsed partial array is\n",myid);
+      for (i = 0; i < param.visresy; i++) {
+	for (j = 0; j < param.visresx; j++) {
+	  fprintf(stderr,"%f ", uloc[i * param.visresx + j]);
+	}
+	fprintf(stderr,"\n");
+      }
       fprintf(stderr,"\n\n");
     }
-  if (myid!=nprocs-1)
-    MPI_Send (&file_free, 1, MPI_INT, myid+1, 1, MPI_COMM_WORLD);
-  
+  }
   MPI_Barrier(comm_2d);
   //---DEBUG ONLY
-  */
-  
-      file_free=0;
-      if (myid==root)
-	/*    file_free=1;
-      else
-	MPI_Recv(&file_free, 1, MPI_INT, myid-1, 1, MPI_COMM_WORLD, &status);
-	if (file_free=1)*/
-	{
-	  if(param.act_res * param.act_res < 200) {
-	    fprintf(stderr,"\np%d: my partial array is\n",myid);
-	    for (i = 0; i < param.arraysize_y + 2; i++) {
-	      if(i==1)
-		fprintf(stderr,"---------\n");
-	      for (j = 0; j < param.arraysize_x + 2; j++) {
-		if(j==param.arraysize_x+1 || j==1)
-		  fprintf(stderr,"| ");
-		fprintf(stderr,"%f ", param.u[i * (param.arraysize_x + 2) + j]);
+  if (param.col==1&&param.row==1)
+    {
+      if(param.act_res * param.act_res < 200) {
+	fprintf(stderr,"\np%d: my coarsed partial array is\n",myid);
+	for (i = 0; i < param.visresy; i++) {
+	  for (j = 0; j < param.visresx; j++) {
+	    fprintf(stderr,"%f ", uloc[i * param.visresx + j]);
+	  }
+	  fprintf(stderr,"\n");
+	}
+	fprintf(stderr,"\n\n");
       }
-	      fprintf(stderr,"\n");
-	      if(i==param.arraysize_y)
-		fprintf(stderr,"---------\n");
-	    }
-	    fprintf(stderr,"\n\n");
-	  }
-	  /*	  if (myid!=nprocs-1)
-	    MPI_Send (&file_free, 1, MPI_INT, myid+1, 1, MPI_COMM_WORLD);
-	  */	}
-      MPI_Barrier(comm_2d);
-      //---DEBUG ONLY
-
-      if (param.row==1&&param.col==1)
-	/*    file_free=1;
-      else
-	MPI_Recv(&file_free, 1, MPI_INT, myid-1, 1, MPI_COMM_WORLD, &status);
-	if (file_free=1)*/
-	{
-	  if(param.act_res * param.act_res < 200) {
-	    fprintf(stderr,"\np%d: my partial array is\n",myid);
-	    for (i = 0; i < param.arraysize_y + 2; i++) {
-	      if(i==1)
-		fprintf(stderr,"---------\n");
-	      for (j = 0; j < param.arraysize_x + 2; j++) {
-		if(j==param.arraysize_x+1 || j==1)
-		  fprintf(stderr,"| ");
-		fprintf(stderr,"%f ", param.u[i * (param.arraysize_x + 2) + j]);
-      }
-	      fprintf(stderr,"\n");
-	      if(i==param.arraysize_y)
-		fprintf(stderr,"---------\n");
-	    }
-	    fprintf(stderr,"\n\n");
-	  }
-	  /*	  if (myid!=nprocs-1)
-	    MPI_Send (&file_free, 1, MPI_INT, myid+1, 1, MPI_COMM_WORLD);
-	  */	}
-      MPI_Barrier(comm_2d);
-      //---DEBUG ONLY
-      MPI_Barrier(MPI_COMM_WORLD);
-
-
-      
-      //if (param.row==1 && param.col==1)
-      coarsen(param.u, param.act_res + 2, param.act_res + 2, param.uvis, param.visres + 2, param.visres + 2,ofx,ofy,lx,ly,param.arraysize_x + 2,param.arraysize_y + 2);
-      
-      
-      MPI_Barrier(comm_2d);
-      file_free=0;
-      if (myid==root)
-	/*file_free=1;
-      else
-	MPI_Recv(&file_free, 1, MPI_INT, myid-1, 1, MPI_COMM_WORLD, &status);
-	if (file_free=1)*/
-	{
-	  if(param.act_res * param.act_res < 200) {
-	    fprintf(stderr,"\np%d: my coarsed partial array is\n",myid);
-	    for (i = 0; i < param.visres + 2; i++) {
-	      //if(i==1)
-		//fprintf(stderr,"---------\n");
-	      for (j = 0; j < param.visres + 2; j++) {
-		fprintf(stderr,"%f ", param.uvis[i * (param.visres + 2) + j]);
-	      }
-	      fprintf(stderr,"\n");
-	    }
-	    fprintf(stderr,"\n\n");
-	  }
-	  /*if (myid!=nprocs-1)
-	    MPI_Send (&file_free, 1, MPI_INT, myid+1, 1, MPI_COMM_WORLD);
-	  */	}
-      MPI_Barrier(comm_2d);
-      //---DEBUG ONLY
-	if (param.col==1&&param.row==1)
-	/*file_free=1;
-      else
-	MPI_Recv(&file_free, 1, MPI_INT, myid-1, 1, MPI_COMM_WORLD, &status);
-	if (file_free=1)*/
-	{
-	  if(param.act_res * param.act_res < 200) {
-	    fprintf(stderr,"\np%d: my coarsed partial array is\n",myid);
-	    for (i = 0; i < param.visres + 2; i++) {
-	      //if(i==1)
-		//fprintf(stderr,"---------\n");
-	      for (j = 0; j < param.visres + 2; j++) {
-		fprintf(stderr,"%f ", param.uvis[i * (param.visres + 2) + j]);
-	      }
-	      fprintf(stderr,"\n");
-	    }
-	    fprintf(stderr,"\n\n");
-	  }
-	  /*if (myid!=nprocs-1)
-	    MPI_Send (&file_free, 1, MPI_INT, myid+1, 1, MPI_COMM_WORLD);
-	  */	}
-      MPI_Barrier(comm_2d);
-      //---DEBUG ONLY
-      
-
-
-  double* globalvis;
-  globalvis  = (double*)calloc( sizeof(double),((param.visres+2)*(param.visres+2)) );
-  
-  MPI_Reduce(param.uvis, globalvis, ((param.visres+2)*(param.visres+2)), MPI_DOUBLE, MPI_SUM, root, MPI_COMM_WORLD);
-
-      if (myid==root)
-	/*file_free=1;
-      else
-	MPI_Recv(&file_free, 1, MPI_INT, myid-1, 1, MPI_COMM_WORLD, &status);
-	if (file_free=1)*/
-	{
-	  if(param.act_res * param.act_res < 200) {
-	    fprintf(stderr,"\np%d: global coarsed array is\n",myid);
-	    for (i = 0; i < param.visres + 2; i++) {
-	      //if(i==1)
-	      //fprintf(stderr,"---------\n");
-	      for (j = 0; j < param.visres + 2; j++) {
-		fprintf(stderr,"%f ", globalvis[i * (param.visres + 2) + j]);
-	      }
-	      fprintf(stderr,"\n");
-	    }
-	    fprintf(stderr,"\n\n");
-	  }
-	  /*if (myid!=nprocs-1)
-	    MPI_Send (&file_free, 1, MPI_INT, myid+1, 1, MPI_COMM_WORLD);
-	  */	}
-      MPI_Barrier(comm_2d);
-
-  if(myid == root)
-  {
-    //printf("Process %d is writing the file\n", myid);
-    write_image(resfile, globalvis, param.visres+2, param.visres+2);
-  }
+	}
+  MPI_Barrier(comm_2d);
+  //---DEBUG ONLY
   if (myid==root)
-    free(globalvis);
-  finalize(&param, myid);
+    {
+      if(param.act_res * param.act_res < 200) {
+	fprintf(stderr,"\np%d: my coarsed partial array is\n",myid);
+	for (i = 0; i < param.visresgloby; i++) {
+	  for (j = 0; j < param.visresglobx; j++) {
+	    fprintf(stderr,"%f ", param.uvis[i * param.visresglobx + j]);
+	  }
+	  fprintf(stderr,"\n");
+	}
+	fprintf(stderr,"\n\n");
+      }
+	}
+  MPI_Barrier(comm_2d);
+  
+  
+  
+  if(myid == root)
+    {
+      write_image(resfile, param.uvis, param.visresglobx, param.visresgloby);
+    }
+  free (displs);
+  free (counts);
+  free (uloc);
+  if (myid==root)
+    finalize(&param, myid);
   MPI_Finalize();
-  //fprintf(stderr, "\nProcess %d is done\n", myid);
-  //printf("Process %d is done\n", myid);
-
+  
   return 0;
 }
