@@ -9,24 +9,46 @@ First, we thought that parsing in one process and broadcasting the data would be
 
 We came up with two concepts for handling the processes local grids. 
 
-The first concept was to simply let every single process initialize the entire grid but just relax one specific tile of the grid. This would be realized by passing on a specific tile offset and tile size in x and y to the relaxation function before exchanging the border cells with its neighbors. This first concept promises a first good speedup without having to do any major modifications to the initialization and handling of the grid.
+The first concept was to simply let every single process initialize the entire grid but just relax one specific tile of the grid. 
+This would be realized by passing on a specific tile offset and tile size in x and y to the relaxation function before exchanging the border cells with its neighbors. 
+This first concept promises a first good speedup without having to do any major modifications to the initialization and handling of the grid.
 
 The second concept was to initialize only the tiles relevant for each process. This way we wouldn't waste memory on parts of the grid that we don't touch.
 
 \subsection*{Process communication}
 
-The next step was to synchronize the data between the neighboring processes. To simplify this, we made use of the MPI topologies (MPI\_Cart\_shift). Therefore, we had each process sent the outermost calculated gridpoints to the neighboring processes according to the cartesian grid, and receive the data from the neighboring processes into the outermost gridpoints, which where not recalculated due to missing neighbors. To do this communication, we used selfdefined datatypes to describe the different datalayouts for sending the values up/down and left/right: Up and Down are continous, while left and right are vectors, in which each entry has a distance of linesize to the last one.
+The next step was to synchronize the data between the neighboring processes. To simplify this, we made use of the MPI topologies (MPI\_Cart\_shift). 
+Therefore, we had each process sent the outermost calculated gridpoints to the neighboring processes according to the cartesian grid, and receive the data from the neighboring processes into the outermost gridpoints, which where not recalculated due to missing neighbors. 
+In order to do this communication, we used selfdefined datatypes to describe the different datalayouts for sending the values up/down and left/right: 
+Up and Down are continous, while left and right are vectors, in which each entry has a distance of linesize to the last one.
 
-In the beginning, we did this routine right in heat.c after the call of the relaxation, but optimized it later so that we swapped the data nonblockingly at the beginning of the calculation, calculated the gridpoints which do not rely on data from other processes, which are located at coordinates 2 to np-2. Afterward, we synchronize the communication and calculate the last layer.
+In the beginning, we did this routine right in heat.c after the call of the relaxation, but optimized it later so that we swapped the data nonblockingly at the beginning of the calculation, calculated the gridpoints which do not rely on data from other processes, which are located at coordinates 2 to np-2.
+Afterward, we synchronize the communication and calculate the last layer.
 
 \subsection*{Gather the Output}
 
-After every process has computed the relaxations on its tiles, the output has to be gathered at the root process.
+After every process has computed the relaxations on its tiles, the output has to be gathered at the root process. For this we again had two differnt concepts.
+
+The first concept was that every single process would coarsen its local array into a uvis of with global visres at the corresponding offset. 
+Afterwards the processes would simply sum their local uvis to a global array at the root process. 
+This approach promised an exact result and a fairly easy implementation due to the minor modification to the original code. 
+Since uvis was supposed to fit into memory anyway it seemed adequate to compute at full resolution at every process. 
+This approach was ommitted due the failure to find a bug causing errors in the right bottom image corner.
+
+The second approach was to coarsen the individual arrays to arrays of a local size proportional to the tilesize. Then the processes gather their local uvis to the root process which prints everything to the image file. 
+In order to do this correctly, a subarray type needed to be created. 
 
 \subsection*{Current State}
-Right now, our program does parse the data as it should, initialize the local array (incl heatsrc), transfer the ghost cells between neighbors and calculate the residua. Thus far, we have not implemented the graphical output (the picture).
+Right now, our program does parse the data as it should, initialize the local array (incl heatsrc), transfer the ghost cells between neighbors and calculate the residua. After that the grids are coarsened and gathered to the root process before being printed.
+The programm has been shown to work just fine under different processor topologies (4x4, 2x4, 1x8, etc.), for different resolutions and with up to 64 processes.
 
-After that, all processes initialize their data, i. e. in particular their arrays. We added some more or less useful parameters to the param struct, namely the size of the local array (x and y, as we no longer are guaranteed to have squares), the length of useful data in the array, because we decided to pad the array, if we could not distribute them evenly, and the processes coordinates in the cartesian grid. We do at no point initialize the global array, but only the local portion of it (plus one row/column in each direction, ``ghost cells'' for communication purposes) and afterwards use the position of the process in the grid to initialize the heatsources. Afterwards, we compared the arrays produced with the array the vanilla version for OpenMP/MPI produced, and after we fixed some minor bugs, had the same data.
+Sadly, the SuperMUC has been shut down for maintainance on the 26th June, which effectively halted our work on the code. It would have been interesting to investigate the performance and behaviour of a MPI/OMP hybrid solution.
+
+In addition to that we only had time to do a rather limited amount of early benchmarking (more on that in sthe section Speedup)
+
+%TODO: mal schauen ob das noch stimmt.
+After that, all processes initialize their data, i. e. in particular their arrays. We added some more or less useful parameters to the param struct, namely the size of the local array (x and y, as we no longer are guaranteed to have squares), the length of useful data in the array, because we decided to pad the array, if we could not distribute them evenly, and the processes coordinates in the cartesian grid. We do at no point initialize the global array, but only the local portion of it (plus one row/column in each direction, ``ghost cells'' for communication purposes) and afterwards use the position of the process in the grid to initialize the heatsources. 
+Afterwards, we compared the arrays produced with the array the vanilla version for OpenMP/MPI produced, and after we fixed some minor bugs, had the same data.
 
 
 
