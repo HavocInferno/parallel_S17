@@ -1,21 +1,28 @@
 \section*{5. Parallelization of heat with MPI}
 
+We at first noticed that the program consists of four different parts: The parsing of the input, the initialization of the values, the actual relaxation and the writing of the output.
+
 \subsection*{Input Parsing}
 
 When parsing the input, we quickly found two different concepts: Parsing in one process and broadcasting the data or parse on all different processes.
-First, we thought that parsing in one process and broadcasting the data would be the smarter choice, as we would not have trouble managing the IO, however, we noticed that broadcasting the heatsources, an array of structs, was not as trivial as we thought, so we changed to all processes reading the data.
+First, we thought that parsing in one process and broadcasting the data would be the smarter choice, as we would not have trouble managing the IO, however, we noticed that broadcasting the heatsources, an array of structs, was not as trivial as we thought, so we changed to all processes reading the data. This is in our opinion acceptable, beacause the input file in this particular application is pretty small. In general, you do not want to parse large files in every process.
 
-\subsection*{Local Grinds}
+\subsection*{Initialization}
 
-We came up with two concepts for handling the processes local grids. 
+%We came up with two concepts for handling the processes local grids. 
 
-The first concept was to simply let every single process initialize the entire grid but just relax one specific tile of the grid. 
-This would be realized by passing on a specific tile offset and tile size in x and y to the relaxation function before exchanging the border cells with its neighbors. 
-This first concept promises a first good speedup without having to do any major modifications to the initialization and handling of the grid.
+%The first concept was to simply let every single process initialize the entire grid but just relax one specific tile of the grid. 
+%This would be realized by passing on a specific tile offset and tile size in x and y to the relaxation function before exchanging the border cells with its neighbors. 
+%This first concept promises a first good speedup without having to do any major modifications to the initialization and handling of the grid.
 
-The second concept was to initialize only the tiles relevant for each process. This way we wouldn't waste memory on parts of the grid that we don't touch.
+%The second concept was to initialize only the tiles relevant for each process. This way we wouldn't waste memory on parts of the grid that we don't touch.
 
-\subsection*{Process communication}
+We found multiple difficulties in this section. First, the resolution might not be divisible by the number of processes in one direction. In general this should not be as much of a problem, because you usually only run an mpi-parallelization for a very large inputsize, but as this was not mentioned in the task, we had to deal with it. We decided that we then would want to pad the array with '0', so that every process has a same size array. Also, initializing the heatsources at first seemed like it was difficult, however, because we had a cartesian topology, we could simply use MPI\_Cart\_coords to determine the coordinates of a certain process and therefore determine a) whether it sits at what would be a border in the global array and b) how much offset it has from 0,0, so that we can calculate the distance to the sources correctly.
+
+
+
+
+\subsection*{Relaxation}
 
 The next step was to synchronize the data between the neighboring processes. To simplify this, we made use of the MPI topologies (MPI\_Cart\_shift). 
 Therefore, we had each process sent the outermost calculated gridpoints to the neighboring processes according to the cartesian grid, and receive the data from the neighboring processes into the outermost gridpoints, which where not recalculated due to missing neighbors. 
@@ -24,6 +31,8 @@ Up and Down are continous, while left and right are vectors, in which each entry
 
 In the beginning, we did this routine right in heat.c after the call of the relaxation, but optimized it later so that we swapped the data nonblockingly at the beginning of the calculation, calculated the gridpoints which do not rely on data from other processes, which are located at coordinates 2 to np-2.
 Afterward, we synchronize the communication and calculate the last layer.
+
+Also, you can use blocking communication with MPI\_sendrecv. However, this is slightly slower than nonblocking communication.
 
 \subsection*{Gather the Output}
 
@@ -36,25 +45,35 @@ Since uvis was supposed to fit into memory anyway it seemed adequate to compute 
 This approach was ommitted due the failure to find a bug causing errors in the right bottom image corner.
 
 The second approach was to coarsen the individual arrays to arrays of a local size proportional to the tilesize. Then the processes gather their local uvis to the root process which prints everything to the image file. 
-In order to do this correctly, a subarray type needed to be created. 
+In order to do this correctly, a subarray type needed to be created. At this point, we again faced the problem with a arraysize that is not divisible by the number of processes, an we did that at two different spots: For uvis, we ust decided that we would increase the resolution so far, that the length and broadth, respectively, are divisible by the number of processes. This is in our eyes acceptable, because this does just increase the resolution at most by the number of processes in this dimension minus -1.
+
+Second, we had to deal with our padded arrays. We again used the assumption that you only would use MPI with very high resolutions, so we decided to use coarsen to stretch padded arrays in a way, that their coarsened version would only use their real gridpoints, but coarse them to the same size as non-padded arrays. This is very problematic for very small arraysizes, but as already mentioned, you would generally not use an MPI-parallelization for those. For reasonable resolutions, this yields pretty good results.
 
 \subsection*{Current State}
 Right now, our program does parse the data as it should, initialize the local array (incl heatsrc), transfer the ghost cells between neighbors and calculate the residua. After that the grids are coarsened and gathered to the root process before being printed.
-The programm has been shown to work just fine under different processor topologies (4x4, 2x4, 1x8, etc.), for different resolutions and with up to 64 processes.
-
-Sadly, the SuperMUC has been shut down for maintainance on the 26th June, which effectively halted our work on the code. It would have been interesting to investigate the performance and behaviour of a MPI/OMP hybrid solution.
-
-In addition to that we only had time to do a rather limited amount of early benchmarking (more on that in sthe section Speedup)
-
-%TODO: mal schauen ob das noch stimmt.
-After that, all processes initialize their data, i. e. in particular their arrays. We added some more or less useful parameters to the param struct, namely the size of the local array (x and y, as we no longer are guaranteed to have squares), the length of useful data in the array, because we decided to pad the array, if we could not distribute them evenly, and the processes coordinates in the cartesian grid. We do at no point initialize the global array, but only the local portion of it (plus one row/column in each direction, ``ghost cells'' for communication purposes) and afterwards use the position of the process in the grid to initialize the heatsources. 
-Afterwards, we compared the arrays produced with the array the vanilla version for OpenMP/MPI produced, and after we fixed some minor bugs, had the same data.
-
-
-
+After that we started to work on an MPI-OMP Hybrid solution, when the clock reached 9am on June 26\textsuperscript{th} and we were surprised by supoermuc going into maintenance mode. Thus, at this time, we can only provide speedup for square topologies.
 
 
 \subsection*{Speedup}
 
 To be added when implementation fully works.
 %TODO: ADD TABLE OF SPEEDUP
+
+\begin{center}
+
+  \begin{tabular} {|l|r|l|}
+    \hline
+    Measurement & Floprate & Speedup \\ \hline
+    Sequential (Baseline) & 3,896.2 MFlop/s & 1 \\ \hline
+    Auto parallelization 8 threads & 13,208.1 MFlop/s & 3.39 \\ \hline
+    OMP 16 Threads  & 22,247.3 MFlop/s & 5.71\\ \hline
+    MPI 64 processes, blocking  & 74,064.5 MFlop/s & 19.01\\ \hline
+    MPI 64 processes, nonblocking  & 80,339.4 MFlop/s & 20.62\\ \hline
+    
+
+    
+
+    
+  \end{tabular}
+
+\end{center}
