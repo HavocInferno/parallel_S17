@@ -1,0 +1,80 @@
+\section{Jacobi Relaxation}
+\begin{frame}
+  \frametitle{Parallelization of the jacobi relaxation}
+  \begin{itemize}
+  \item Three tasks: Reduction of global residual, communication of borders and adjustment of calculation to different arraysizes and to interleave communication and calculcation
+  \item First task is pretty simple
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+    MPI_Allreduce(&residual, &globresid, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  \end{lstlisting}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+  \begin{itemize}
+  \item For communication between processes, we need to determine neighbors
+    \begin{lstlisting}
+      int north, south, west, east;
+      MPI_Cart_shift(comm_2d, 1, 1, &north, &south);
+      MPI_Cart_shift(comm_2d, 0, 1, &west, &east);
+    \end{lstlisting}
+  \item We also need types for communication, as the layout of columns and lines in the memory vary
+    \begin{lstlisting}
+    MPI_Type_contiguous(npx-2, MPI_DOUBLE, &north_south_type);
+    MPI_Type_vector(npy-2, 1, npx, MPI_DOUBLE, &east_west_type);
+    \end{lstlisting}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+    MPI_Request reqs[8];
+    MPI_Isend(&u[1+sizex] , 1, *north_south_type, north, 9, comm_2d, &reqs[0]);
+    MPI_Isend(&u[1+(sizey-2)*sizex] , 1, *north_south_type, south, 9, comm_2d, &reqs[1]);
+    MPI_Irecv(&u[1], 1, *north_south_type, north, 9, comm_2d, &reqs[2]);
+    MPI_Irecv(&u[1+(sizey-1)*sizex], 1, *north_south_type, south, 9, comm_2d, &reqs[3]);
+    MPI_Isend(&u[1+sizex], 1, *east_west_type, west, 9, comm_2d, &reqs[4]);
+    MPI_Isend(&u[2*sizex-2], 1, *east_west_type, east, 9, comm_2d, &reqs[5]);
+    MPI_Irecv(&u[sizex], 1, *east_west_type, west, 9, comm_2d, &reqs[7]);
+    MPI_Irecv(&u[2*sizex-1], 1, *east_west_type, east, 9, comm_2d, &reqs[6]);
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Interleaving of calculation and communication}
+    \begin{itemize}
+    \item Only the outermost layer of calculated gridpoints depends on values from other processes
+    \item Start communication, calculate all but the outermost layer, then synchronize and calculate the outermost layer
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+    // calculate inner points, which do not depend on borders
+    for( i=2; i<len_y+0; i++ ) {
+      for( j=2; j<len_x+0; j++ )
+      {
+        // Calculate new values	
+      }
+    }
+    MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
+    for (i=1; i<len_x+1; i++)
+    {
+      // top row
+      unew = 0.25 * (u[i]+u[sizex-1+i]+u[sizex+1+i]+u[2*sizex+i]);
+      diff = unew - u[sizex+i];
+      utmp [sizex+i] = unew;
+      sum+=diff*diff;
+      // .. bottom row,
+    }
+    for (i=2; i<len_y; i++)
+    {
+      //leftmost and rightmost column
+    }
+  \end{lstlisting}
+\end{frame}

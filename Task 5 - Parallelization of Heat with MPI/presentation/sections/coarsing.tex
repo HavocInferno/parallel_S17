@@ -1,0 +1,59 @@
+\section{Generating the output}
+\begin{frame}
+  \frametitle{Coarsening}
+  \begin{itemize}
+  \item State: Every process has its own, potentially very large array
+  \item Goal: Writeout the heatdistribution of the entire body in a reasonable resolution uvis
+  \item Obviously, gathering the whole array is no option
+  \item In general, there is MPI\_IO to writeout distributed array, but due to calculation of pixmap, this might be pretty difficult
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \begin{itemize}
+  \item Coarse al local arrays to uvis/arraysize and gather those arrays
+  \item One root process then writes the entire picture
+  \item Issues:
+    \begin{itemize}
+    \item Padded arrays: We stretch those to size of normal arrays.
+    \item Also, resolution might not be divisible through number of processes in dimension. We just increase the resolution in those cases
+    \end{itemize}
+  \item Might lead to wrong output for very small resolutions, but works very fine for reasonable sizes
+  \item We need to define a MPI\_Datatype, so that receiving process knows datalayout of global uvis
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+    MPI_Datatype subarray, subarray_resized;
+    int sizes[2];
+    sizes [0] = param.visresgloby;
+    sizes [1] = param.visresglobx;
+    int subsizes[2];
+    subsizes [0] = param.visresy;
+    subsizes [1] = param.visresx;
+    int starts[2]= {0,0};
+    int order;
+    int* displs=(int*) malloc (nprocs*sizeof(int));
+    int* counts=(int*) malloc (nprocs*sizeof(int));
+    int cords[2];
+  \end{lstlisting}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+    for (a=0; a<nprocs; a++)
+    {
+      counts[a]=1;
+      MPI_Cart_coords(comm_2d, a, 2, cords);
+      displs[a]=cords[0]*param.visresx+cords[1]*param.visresy*param.visresglobx;
+    }
+    MPI_Type_create_subarray(2, sizes, subsizes, starts, MPI_ORDER_C, MPI_DOUBLE, &subarray);
+    MPI_Type_commit(&subarray);
+    MPI_Type_create_resized(subarray, 0, 1*sizeof(double), &subarray_resized);
+    MPI_Type_commit(&subarray_resized);
+    MPI_Gatherv(uloc, param.visresx*param.visresy, MPI_DOUBLE, param.uvis, counts, displs, subarray_resized, root, comm_2d);
+  \end{lstlisting}
+\end{frame}

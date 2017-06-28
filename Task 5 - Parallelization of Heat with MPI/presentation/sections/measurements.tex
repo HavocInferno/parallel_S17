@@ -1,0 +1,19 @@
+\section{Time measurements}
+\begin{frame}
+  \frametitle{Measurements}
+  \begin{itemize}
+  \item Sadly, due to SuperMUC maintenance we could not run a lot of tests on our implementation
+    \item Speedup fpr square topologies looks like it is limited by memory bandwidth
+    \begin{center}
+      \begin{tabular} {|l|r|l|}
+        \hline
+        Measurement & Floprate & Speedup \\ \hline
+        Sequential (Baseline) & 3,896.2 MFlop/s & 1 \\ \hline
+        Auto parallelization 8 threads & 13,208.1 MFlop/s & 3.39 \\ \hline
+        OMP 16 Threads  & 22,247.3 MFlop/s & 5.71\\ \hline
+        MPI 64 processes, blocking  & 74,064.5 MFlop/s & 19.01\\ \hline
+        MPI 64 processes, nonblocking  & 80,339.4 MFlop/s & 20.62\\ \hline
+      \end{tabular}
+    \end{center}
+  \end{itemize}
+\end{frame}

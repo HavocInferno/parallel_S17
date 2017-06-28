@@ -1,0 +1,37 @@
+\section{Input parsing}
+\begin{frame}
+  \frametitle{Parsing of input file}
+  \begin{itemize}
+  \item Different approaches:
+    \begin{itemize}
+    \item ``Root process'' parses input, then broadcast
+    \item Every process parses input
+    \end{itemize}
+  \item First approach is very easy for simple types
+  \item Heatsrc is an array of structs!
+  \item Second approach might lead to problems if every process reads at same time
+  \item Idea: Use ``token'' to indicate whether the file is free or not
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+    // check input file
+    int file_free=0;
+    {
+      if (myid==root)
+      file_free=1;
+      else
+      MPI_Recv(&file_free, 1, MPI_INT, myid-1, 1, MPI_COMM_WORLD, &status);
+      if (file_free==1)
+      {
+        // parse input      
+      }
+      if (myid!=nprocs-1)
+      {
+        MPI_Send(&file_free, 1, MPI_INT, myid+1, 1, MPI_COMM_WORLD);
+      }
+    }
+  \end{lstlisting}
+
+\end{frame}

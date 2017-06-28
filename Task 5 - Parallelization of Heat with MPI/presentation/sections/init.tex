@@ -1,0 +1,92 @@
+\section{Initialization}
+\begin{frame}
+  \frametitle{Initialization of the processes}
+  \begin{itemize}
+  \item Consists of two subtasks
+    \begin{itemize}
+    \item Calculation arraysizes and initializion of them
+    \item Initialization of heatsources
+    \end{itemize}
+    \item Needed: Cartesian topology
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+    if (((act_res)%(proc_x))==0)
+    (arraysize_x)=(len_x)=(act_res)/(proc_x);
+    else {
+      if ((col)==((proc_x)-1))
+      {
+	//last processor in dim x
+	(arraysize_x)=(act_res/proc_x)+1;
+	(len_x)=(act_res)%(arraysize_x);
+      } else {
+	(arraysize_x)=(len_x)=((act_res)/(proc_x))+1; 
+      }
+    }    
+    if (((act_res)%(proc_y))==0)
+    (arraysize_y)=(len_y)=(act_res)/(proc_y);
+    else {
+      if ((row)==((proc_y)-1))
+      {
+	//last processor in dim y
+	(arraysize_y)=((act_res)/(proc_y))+1;
+	(len_y)=(act_res)%(arraysize_y);
+      } else {
+	(arraysize_y)=(len_y)=((act_res)/(proc_y))+1; 
+      }
+    }
+  \end{lstlisting}
+
+
+\end{frame}
+
+
+
+\begin{frame}
+  \begin{itemize}
+  \item Check if border of array is actually border for global grid
+    \item Adjust distance to array's position in global grid
+  \end{itemize}
+\end{frame}
+
+
+
+
+\begin{frame}[fragile]
+  \begin{lstlisting}
+      int c_x=(col)*(arraysize_x);
+      int c_y=(row)*(arraysize_y);
+      for( i=0; i<numsrcs; i++ )
+      {
+        // top row 
+        if ((row)==0)
+        {
+	  for( j=0; j<spx; j++ ) //was np
+	  { 
+	    dist = sqrt (pow((double)(j+c_x)/(double)(np-1) -
+	      heatsrcs[i].posx, 2)+
+	      pow(heatsrcs[i].posy, 2));
+              if( dist <= heatsrcs[i].range )
+	      {
+		(u)[j] += 
+		(heatsrcs[i].range-dist) /
+		heatsrcs[i].range *
+		heatsrcs[i].temp;
+	      }
+	  }
+	}
+        //other borders
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Notes}
+  \begin{itemize}
+  \item Very easy to mix up x and y
+  \item Incredibly difficult to debug just looking at the residual
+  \item Work with a small arraysize and print the arrays out!
+  \end{itemize}
+\end{frame}
