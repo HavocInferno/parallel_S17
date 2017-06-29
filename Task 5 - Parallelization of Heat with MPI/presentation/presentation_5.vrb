@@ -3,11 +3,11 @@
     {
       counts[a]=1;
       MPI_Cart_coords(comm_2d, a, 2, cords);
-      displs[a]=cords[0]*param.visresx+cords[1]*param.visresy*param.visresglobx;
+      displs[a]=cords[0]*visresx+cords[1]*visresy*visresglobx;
     }
     MPI_Type_create_subarray(2, sizes, subsizes, starts, MPI_ORDER_C, MPI_DOUBLE, &subarray);
     MPI_Type_commit(&subarray);
     MPI_Type_create_resized(subarray, 0, 1*sizeof(double), &subarray_resized);
     MPI_Type_commit(&subarray_resized);
-    MPI_Gatherv(uloc, param.visresx*param.visresy, MPI_DOUBLE, param.uvis, counts, displs, subarray_resized, root, comm_2d);
+    MPI_Gatherv(uloc, visresx*visresy, MPI_DOUBLE, param.uvis, counts, displs, subarray_resized, root, comm_2d);
   \end{lstlisting}
