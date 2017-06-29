@@ -4,7 +4,7 @@
   \begin{itemize}
   \item Consists of two subtasks
     \begin{itemize}
-    \item Calculation arraysizes and initializion of them
+    \item Calculation of arraysizes and initialization of them
     \item Initialization of heatsources
     \end{itemize}
     \item Needed: Cartesian topology
@@ -27,18 +27,7 @@
 	(arraysize_x)=(len_x)=((act_res)/(proc_x))+1; 
       }
     }    
-    if (((act_res)%(proc_y))==0)
-    (arraysize_y)=(len_y)=(act_res)/(proc_y);
-    else {
-      if ((row)==((proc_y)-1))
-      {
-	//last processor in dim y
-	(arraysize_y)=((act_res)/(proc_y))+1;
-	(len_y)=(act_res)%(arraysize_y);
-      } else {
-	(arraysize_y)=(len_y)=((act_res)/(proc_y))+1; 
-      }
-    }
+    // Also do this for y
   \end{lstlisting}
 
 
@@ -65,7 +54,7 @@
         // top row 
         if ((row)==0)
         {
-	  for( j=0; j<spx; j++ ) //was np
+	  for( j=0; j<spx; j++ ) 
 	  { 
 	    dist = sqrt (pow((double)(j+c_x)/(double)(np-1) -
 	      heatsrcs[i].posx, 2)+
