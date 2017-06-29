@@ -16,7 +16,7 @@
   \item Issues:
     \begin{itemize}
     \item Padded arrays: We stretch those to size of normal arrays.
-    \item Also, resolution might not be divisible through number of processes in dimension. We just increase the resolution in those cases
+    \item Also, resolution might not be divisible by number of processes in dimension. We just increase the resolution in those cases
     \end{itemize}
   \item Might lead to wrong output for very small resolutions, but works very fine for reasonable sizes
   \item We need to define a MPI\_Datatype, so that receiving process knows datalayout of global uvis
