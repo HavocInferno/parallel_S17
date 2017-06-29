@@ -16,15 +16,15 @@
 \begin{frame}[fragile]
   \begin{lstlisting}
     if (((act_res)%(proc_x))==0)
-    (arraysize_x)=(len_x)=(act_res)/(proc_x);
+    arraysize_x=len_x=act_res/proc_x;
     else {
-      if ((col)==((proc_x)-1))
+      if (col==proc_x-1)
       {
 	//last processor in dim x
-	(arraysize_x)=(act_res/proc_x)+1;
-	(len_x)=(act_res)%(arraysize_x);
+	arraysize_x=act_res/proc_x+1;
+	len_x=act_res%arraysize_x;
       } else {
-	(arraysize_x)=(len_x)=((act_res)/(proc_x))+1; 
+	arraysize_x=len_x=(act_res/proc_x)+1; 
       }
     }    
     // Also do this for y
@@ -47,12 +47,12 @@
 
 \begin{frame}[fragile]
   \begin{lstlisting}
-      int c_x=(col)*(arraysize_x);
-      int c_y=(row)*(arraysize_y);
+      int c_x=col*arraysize_x;
+      int c_y=row*arraysize_y;
       for( i=0; i<numsrcs; i++ )
       {
         // top row 
-        if ((row)==0)
+        if (row==0)
         {
 	  for( j=0; j<spx; j++ ) 
 	  { 
