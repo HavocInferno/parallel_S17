@@ -1,0 +1,5 @@
+*.o
+*~
+player
+start
+referee
