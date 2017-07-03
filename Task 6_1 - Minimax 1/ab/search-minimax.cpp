@@ -53,7 +53,7 @@ void MinimaxStrategy::searchBestMove()
 
     Move m;
     MoveList list;
-
+    int color = _board->actColor();
     // generate list of allowed moves, put them into <list>
     generateMoves(list);
 
@@ -64,53 +64,70 @@ void MinimaxStrategy::searchBestMove()
         // draw move, evalute, and restore position
 	playMove(m);
 	eval=minimax(0);
-	//eval = evaluate();   // replace by call to minimax
 	takeBack();
 	
-	if (eval > bestEval) {
-	    bestEval = eval;
-	    foundBestMove(0, m, eval);
-	}
+	if (color==_board->color1)
+	  {
+	    if (eval > bestEval) {
+	      bestEval = eval;
+	      foundBestMove(0, m, eval);
+	    }
+	  }
+	else // color 2
+	  {
+	    if (eval<bestEval)
+	      {
+		bestEval=eval;
+		foundBestMove(0,m,eval);
+	      }
+	  }
     }
-
-    finishedNode(0,0);
+    finishedNode(0,&m);
 }
 int MinimaxStrategy::minimax (int depth)
 {
 	int bestEval;
 	
-	//even depths try to maximize current values, odd try to minimize current value
-	bool isBlack = (depth % 2) == 0;
-	
-	if(isBlack) 
-		bestEval = minEvaluation();
+	int color = _board->actColor();
+	if(color==_board->color1) 
+	  bestEval = minEvaluation();
 	else
-		bestEval = maxEvaluation();
-		
-  int eval;
-  Move m;
-  MoveList list;
-  
-  // if at maximum depth, just evaluate current position
-  if (depth>=_maxDepth)
-    return evaluate();
-
-  // generate all possible moves
-  generateMoves(list);
-  
-  // evaluate each generated move
-  while(list.getNext(m)){
-    playMove(m);
-    eval=minimax(depth+1);
-    takeBack();
-    if ((isBlack && eval>bestEval) || (!isBlack && eval<bestEval))  // Black maximized, red minimizes
-      {
-      bestEval=eval;
-      foundBestMove(depth, m, eval); //<- do we actually need this? we are not necessarily trying to find the best move for some matchposition in the future, are we?
-      }
-  }
-  //finishedNode(&depth,&list); // wrong arguments obviously
-  return bestEval;
+	  bestEval = maxEvaluation();
+	
+	int eval;
+	Move m;
+	MoveList list;
+	
+	// if at maximum depth, just evaluate current position
+	if (depth>=_maxDepth)
+	  {
+	    return evaluate();
+	  }
+	// generate all possible moves
+	generateMoves(list);
+	
+	// evaluate each generated move
+	while(list.getNext(m)){
+	  playMove(m);
+	  eval=minimax(depth+1);
+	  takeBack();
+	  if (color==_board->color1)  // Black maximized, red minimizes
+	    // color 1
+	    {
+	if (eval>bestEval)
+	  {
+	    bestEval=eval;
+	    //foundBestMove(depth, m, eval); //<- do we actually need this? we are not necessarily trying to find the best move for some matchposition in the future, are we?
+	  }
+	    }
+	  else // color2
+	    if (eval<bestEval)
+	      {
+		bestEval=eval;
+	      }
+	}
+	finishedNode(depth,&m); // wrong arguments obviously
+	return bestEval;
 }
 // register ourself as a search strategy
 MinimaxStrategy minimaxStrategy;
