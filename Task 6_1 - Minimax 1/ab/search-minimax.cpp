@@ -47,6 +47,7 @@ class MinimaxStrategy: public SearchStrategy
 void MinimaxStrategy::searchBestMove()
 {
     // we try to maximize bestEvaluation
+
     int bestEval = minEvaluation();
     int eval;
 
@@ -76,8 +77,13 @@ void MinimaxStrategy::searchBestMove()
 }
 int MinimaxStrategy::minimax (int depth)
 {
-  int currentValue=-15000;
-  int bestEval = minEvaluation();
+	
+	//even depths try to maximize current values, odd try to minimize current value
+	bool isBlack = (depth % 2) == 0;
+	
+	if(isBlack) 
+	else
+		
   int eval;
   Move m;
   MoveList list;
@@ -92,16 +98,16 @@ int MinimaxStrategy::minimax (int depth)
   // evaluate each generated move
   while(list.getNext(m)){
     playMove(m);
-    eval=minimax(depth+1);  // that is the recursive part. we should think about passing the player as an arg, although there might be a diff way to find out who moves next.
+    eval=minimax(depth+1);
     takeBack();
-    if (eval>bestEval)  // we need to unterstand whose turn it is, does only try to max value for player 0
+    if ((isBlack && eval>bestEval) || (!isBlack && eval<bestEval))  // Black maximized, red minimizes
       {
       bestEval=eval;
       foundBestMove(depth, m, eval); //<- do we actually need this? we are not necessarily trying to find the best move for some matchposition in the future, are we?
       }
   }
-  finishedNode(0,0); // wrong arguments obviously
-  return currentValue;
+  //finishedNode(depth,0); // wrong arguments obviously
+  return bestEval;
 }
 // register ourself as a search strategy
 MinimaxStrategy minimaxStrategy;
