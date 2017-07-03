@@ -66,8 +66,12 @@ To be completed when supermuc is available again.
     Sequential (Baseline) & 3,896.2 MFlop/s & 1 \\ \hline
     Auto parallelization 8 threads & 13,208.1 MFlop/s & 3.39 \\ \hline
     OMP 16 Threads  & 22,247.3 MFlop/s & 5.71\\ \hline
-    MPI 64 processes, blocking  & 74,064.5 MFlop/s & 19.01\\ \hline
-    MPI 64 processes, nonblocking  & 80,339.4 MFlop/s & 20.62\\ \hline
+    MPI 64 processes, square, blocking  & 74,064.5 MFlop/s & 19.01\\ \hline
+    MPI 64 processes, line, blocking  & 76,077.4 MFlop/s & 19.52\\ \hline
+    MPI 64 processes, col, blocking  & 72,963.2 MFlop/s & 18.73\\ \hline
+    MPI 64 processes, square, nonblocking  & 74,478.7 MFlop/s & 19.12\\ \hline
+    MPI 64 processes, line, nonblocking  & 80,607.0 MFlop/s & 20.69\\ \hline
+    MPI 64 processes, column, nonblocking  & 71,746.0 MFlop/s & 18.41\\ \hline
     
 
     
@@ -76,4 +80,4 @@ To be completed when supermuc is available again.
   \end{tabular}
 
 \end{center}
- The early numbers look very promising. The speedup of the omp version was limited by the memory bandwidth, and as we now use four nodes instead of one, we can at best achieve a speedup of factor 4 compared to this particular speedup. With 20.62 compared to 5.71, we are pretty close to that number.
+In this context, line means that processes only communicate lines, while col means that processes only communicate columns. Earlier, we had a Floprate of nearly 80 GFlop/s on square topologies, but after we fixed the issues regarding non-square topologies, the performance got worse. However, for smaller grids (and for cases where only lines are transferred), we still achieve this speedup.

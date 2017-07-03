@@ -3,7 +3,7 @@
   \frametitle{Coarsening}
   \begin{itemize}
   \item State: Every process has its own, potentially very large array
-  \item Goal: Writeout the heatdistribution of the entire body in a reasonable resolution uvis
+  \item Goal: Writeout the heatdistribution of the entire body in a reasonable resolution
   \item Obviously, gathering the whole array is no option
   \item In general, there is MPI\_IO to writeout distributed array, but due to calculation of pixmap, this might be pretty difficult
   \end{itemize}
@@ -48,7 +48,8 @@
     {
       counts[a]=1;
       MPI_Cart_coords(comm_2d, a, 2, cords);
-      displs[a]=cords[0]*visresx+cords[1]*visresy*visresglobx;
+      displs[a]=cords[0]*visresx+
+		cords[1]*visresy*visresglobx;
     }
     MPI_Type_create_subarray(2, sizes, subsizes, starts, MPI_ORDER_C, MPI_DOUBLE, &subarray);
     MPI_Type_commit(&subarray);

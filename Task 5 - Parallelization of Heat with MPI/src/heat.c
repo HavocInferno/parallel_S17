@@ -295,51 +295,6 @@ int main(int argc, char *argv[]) {
   
   MPI_Type_free(&subarray_resized);
   MPI_Type_free(&subarray);
-  MPI_Barrier(comm_2d);
-  file_free=0;
-  if (myid==root)	{
-    if(param.act_res * param.act_res < 200) {
-      fprintf(stderr,"\np%d: my coarsed partial array is\n",myid);
-      for (i = 0; i < param.visresy; i++) {
-	for (j = 0; j < param.visresx; j++) {
-	  fprintf(stderr,"%f ", uloc[i * param.visresx + j]);
-	}
-	fprintf(stderr,"\n");
-      }
-      fprintf(stderr,"\n\n");
-    }
-  }
-  MPI_Barrier(comm_2d);
-  //---DEBUG ONLY
-  if (param.col==1&&param.row==1)
-    {
-      if(param.act_res * param.act_res < 200) {
-	fprintf(stderr,"\np%d: my coarsed partial array is\n",myid);
-	for (i = 0; i < param.visresy; i++) {
-	  for (j = 0; j < param.visresx; j++) {
-	    fprintf(stderr,"%f ", uloc[i * param.visresx + j]);
-	  }
-	  fprintf(stderr,"\n");
-	}
-	fprintf(stderr,"\n\n");
-      }
-	}
-  MPI_Barrier(comm_2d);
-  //---DEBUG ONLY
-  if (myid==root)
-    {
-      if(param.act_res * param.act_res < 200) {
-	fprintf(stderr,"\np%d: my coarsed partial array is\n",myid);
-	for (i = 0; i < param.visresgloby; i++) {
-	  for (j = 0; j < param.visresglobx; j++) {
-	    fprintf(stderr,"%f ", param.uvis[i * param.visresglobx + j]);
-	  }
-	  fprintf(stderr,"\n");
-	}
-	fprintf(stderr,"\n\n");
-      }
-	}
-  MPI_Barrier(comm_2d);
   
   
   
