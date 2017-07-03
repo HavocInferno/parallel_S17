@@ -9,6 +9,7 @@
 #include "search.h"
 #include "board.h"
 #include "eval.h"
+#include <stdio.h>
 
 /**
  * To create your own search strategy:
@@ -48,15 +49,18 @@ void MinimaxStrategy::searchBestMove()
 {
     // we try to maximize bestEvaluation
 
-    int bestEval = minEvaluation();
-    int eval;
+     int eval=0;
 
     Move m;
     MoveList list;
     int color = _board->actColor();
     // generate list of allowed moves, put them into <list>
     generateMoves(list);
-
+    int bestEval;
+    if (color==_board->color1) 
+      bestEval = minEvaluation();
+    else
+      bestEval = maxEvaluation();
     // loop over all moves
     while(list.getNext(m)) {
 
@@ -65,13 +69,13 @@ void MinimaxStrategy::searchBestMove()
 	playMove(m);
 	eval=minimax(0);
 	takeBack();
-	
 	if (color==_board->color1)
 	  {
-	    if (eval > bestEval) {
-	      bestEval = eval;
-	      foundBestMove(0, m, eval);
-	    }
+	    if (eval > bestEval) 
+	      {
+		bestEval = eval;
+		foundBestMove(0,m,eval);
+	      }
 	  }
 	else // color 2
 	  {
@@ -126,7 +130,7 @@ int MinimaxStrategy::minimax (int depth)
 		bestEval=eval;
 	      }
 	}
-	finishedNode(depth,&m); // wrong arguments obviously
+	//finishedNode(depth,&m); // wrong arguments obviously
 	return bestEval;
 }
 // register ourself as a search strategy
