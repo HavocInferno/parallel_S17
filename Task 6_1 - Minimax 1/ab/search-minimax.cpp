@@ -77,12 +77,15 @@ void MinimaxStrategy::searchBestMove()
 }
 int MinimaxStrategy::minimax (int depth)
 {
+	int bestEval;
 	
 	//even depths try to maximize current values, odd try to minimize current value
 	bool isBlack = (depth % 2) == 0;
 	
 	if(isBlack) 
+		bestEval = minEvaluation();
 	else
+		bestEval = maxEvaluation();
 		
   int eval;
   Move m;
