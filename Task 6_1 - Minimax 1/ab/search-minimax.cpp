@@ -63,7 +63,7 @@ void MinimaxStrategy::searchBestMove()
 
         // draw move, evalute, and restore position
 	playMove(m);
-	minimax(0);
+	eval=minimax(0);
 	//eval = evaluate();   // replace by call to minimax
 	takeBack();
 	
@@ -109,7 +109,7 @@ int MinimaxStrategy::minimax (int depth)
       foundBestMove(depth, m, eval); //<- do we actually need this? we are not necessarily trying to find the best move for some matchposition in the future, are we?
       }
   }
-  //finishedNode(depth,0); // wrong arguments obviously
+  //finishedNode(&depth,&list); // wrong arguments obviously
   return bestEval;
 }
 // register ourself as a search strategy
