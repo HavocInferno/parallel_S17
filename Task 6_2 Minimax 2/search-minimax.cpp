@@ -68,7 +68,6 @@ void MinimaxStrategy::searchBestMove()
 	MoveList list;
 	//sprintf(board, "%s\n", _board->getState());
 	strncpy(board, _board->getState(), 500);
-	//_board->setState("exit");
 	printf("Length: %d", strlen(board));
 	// distribute board to procs 1..nprocs
 	for (int i=1; i<nprocs; i++)
@@ -86,58 +85,128 @@ void MinimaxStrategy::searchBestMove()
 	  bestEval = maxEvaluation();
 	// loop over all moves
 	printf("There are %d Moves\n", list.count());
-	while(list.getNext(m)) {
-
-	  
-	  // draw move, evalute, and restore position
-	  playMove(m);
-	  eval=minimax(0);
-	  takeBack();
-	  if (color==_board->color1)
+	int ctr=0;
+	while(list.getNext(m)) 
+	  {
+	    if (myid%nprocs==ctr)
 	    {
-	      if (eval > bestEval) 
+	      
+	      // draw move, evalute, and restore position
+	      playMove(m);
+	      eval=minimax(0);
+	      takeBack();
+	      if (color==_board->color1)
 		{
-		  bestEval = eval;
-		  foundBestMove(0,m,eval);
-	      }
+		  if (eval > bestEval) 
+		    {
+		      bestEval = eval;
+		      foundBestMove(0,m,eval);
+		  }
+		}
+	      else // color 2
+		{
+		  if (eval<bestEval)
+		    {
+		      bestEval=eval;
+		      foundBestMove(0,m,eval);
+		    }
+		}
 	    }
-	  else // color 2
-	    {
-	      if (eval<bestEval)
+	    ctr++;
+	  }
+	// recv bestmove from slaves. field, dir, type, value
+	int eval2, type;
+	short field;
+	unsigned char dir;
+	for (int i=1; i<nprocs; i++)
+	  {
+	    MPI_Recv(&eval2, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
+	    MPI_Recv(&type, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
+	    MPI_Recv(&field, 1, MPI_SHORT, i, 0, MPI_COMM_WORLD, &status);
+	    MPI_Recv(&dir, 1, MPI_UNSIGNED_CHAR, i, 0, MPI_COMM_WORLD, &status);
+	    // cmp with own bestmove, update if needed
+	      if (color==_board->color1)
 		{
-		  bestEval=eval;
-		  foundBestMove(0,m,eval);
+		  if (eval2 > bestEval) 
+		    {
+		      bestEval = eval2;
+		      Move::MoveType type = (Move::MoveType) type;
+		      Move newMove (field, dir, type);
+		      foundBestMove(0,newMove,eval2);
+		    }
+		}
+	      else // color 2
+		{
+		  if (eval2<bestEval)
+		    {
+		      bestEval = eval2;
+		      Move::MoveType type = (Move::MoveType) type;
+		      Move newMove (field, dir, type);
+		      foundBestMove(0,newMove,eval2);
+		    }
 		}
 	  }
-	}
+		
 	finishedNode(0,&m);
-      } else // slave process
+      } 
+    else // slave process
       {
 	MPI_Status status;
 	int eval=0;
 	char board [500];
 	Move m;
 	MoveList list;
-	
-	while (1) // once process breaks out of this loop, it terminates!
+	int ctr=0;
+	while (1) // once process breaks out of this loop, the whole player terminates!
 	  {
 	    // init board
 	    MPI_Recv(board, 500, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
 
-	    if (strncmp(board, "exit", 4)==0) {
+	    if (strncmp(board, "quit", 4)==0) {
 	      break;
 	    }
 	    printf("DEBUG: %s\nDEBUG\n", board);	    
 	    bool check=_board->setState(board);
-	    //bool check=_board->setState("exit");
 	    printf("Has set state\n");
-	    /*int color = _board->actColor();
+	    int color = _board->actColor();
 	    int bestEval;
 	    if (color==_board->color1) 
 	      bestEval = minEvaluation();
 	    else
 	      bestEval = maxEvaluation();
-	    */
+	    
+	    generateMoves(list);
+	    while(list.getNext(m))
+	      {
+		if (myid%nprocs==ctr){
+		  // draw move, evalute, and restore position
+		  playMove(m);
+		  eval=minimax(0);
+		  takeBack();
+		  if (color==_board->color1)
+		    {
+		      if (eval > bestEval) 
+			{
+			  bestEval = eval;
+			  foundBestMove(0,m,eval);
+			}
+		}
+		  else // color 2
+		    {
+		      if (eval<bestEval)
+			{
+			  bestEval=eval;
+			  foundBestMove(0,m,eval);
+			}
+		    }
+		}
+		ctr++;
+	      }
+	    // send best move to root. dir, type, field, value
+	    MPI_Send(&eval, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+	    MPI_Send(&_bestMove.type, 1, MPI_INT, 0, 0, MPI_COMM_WORLD); // enum
+	    MPI_Send(&_bestMove.field, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);
+	    MPI_Send(&_bestMove.direction, 1, MPI_UNSIGNED_CHAR, 0, 0, MPI_COMM_WORLD);
 
 	  }
       }
