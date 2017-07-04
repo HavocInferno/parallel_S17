@@ -1,4 +1,4 @@
-/**
+#/**
  * Very simple example strategy:
  * Search all possible positions reachable via one move,
  * and return the move leading to best position
@@ -52,8 +52,6 @@ void MinimaxStrategy::enterSlave()
 
 void MinimaxStrategy::searchBestMove()
 {
-    // we try to maximize bestEvaluation
-
     int myid=_sc->getmyid();
     int nprocs=_sc->getnprocs();
     if (myid==0)
@@ -115,6 +113,7 @@ void MinimaxStrategy::searchBestMove()
 	int leaves, nodes;
 	short field;
 	unsigned char dir;
+	printf("I am p%d, my best eval is %d\n", myid, bestEval);
 	for (int i=1; i<nprocs; i++)
 	  {
 	    MPI_Recv(&eval2, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
@@ -126,7 +125,7 @@ void MinimaxStrategy::searchBestMove()
 	    _sc->addLeavesvisited(leaves);
 	    _sc->addNodesvisited(nodes);
 	    leaves=nodes=0;
-	    	    // cmp with own bestmove, update if needed
+	    // cmp with own bestmove, update if needed
 	    if (color==_board->color1)
 	      {
 		if (eval2 > bestEval) 
@@ -148,7 +147,7 @@ void MinimaxStrategy::searchBestMove()
 		  }
 	      }
 	  }
-		
+	printf("I am p%d after merge, my best eval is %d\n", myid, bestEval);
 	finishedNode(0,&m);
       } 
     else // slave process
@@ -202,11 +201,12 @@ void MinimaxStrategy::searchBestMove()
 		}
 		ctr++;
 	      }
+	    printf("I am p%d, my best eval is %d\n", myid, bestEval);
 	    finishedNode(0,&m);
 	    int leaves=_sc->getLeavesVisited();
 	    int nodes=_sc->getNodesVisited();
 	    // send best move to root. dir, type, field, value
-	    MPI_Send(&eval, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+	    MPI_Send(&bestEval, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
 	    MPI_Send(&_bestMove.type, 1, MPI_INT, 0, 0, MPI_COMM_WORLD); // enum
 	    MPI_Send(&_bestMove.field, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);
 	    MPI_Send(&_bestMove.direction, 1, MPI_UNSIGNED_CHAR, 0, 0, MPI_COMM_WORLD);
@@ -248,7 +248,6 @@ int MinimaxStrategy::minimax (int depth)
 	      if (eval>bestEval)
 		{
 		  bestEval=eval;
-		  //foundBestMove(depth, m, eval); //<- do we actually need this? we are not necessarily trying to find the best move for some matchposition in the future, are we?
 		}
 	    }
 	  else // color2

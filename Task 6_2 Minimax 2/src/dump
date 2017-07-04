@@ -1,0 +1,55 @@
+Using strategy 'Minimax' ...
+Using strategy 'Minimax' ...
+NetworkDomain::startListening: Port 23412 in use
+NetworkDomain::startListening: Port 23413 in use
+NetworkDomain::startListening: Using Port 23414
+Connection::start: localhost:23416
+Connection::sendString: Cannot connect to localhost:23416
+Connection::start: localhost:23415
+Connection::sendString: Cannot connect to localhost:23415
+Connection::start: localhost:23413
+NetworkDomain::newConnection: localhost:23413, now 1 active connections
+Connection::start: localhost:23412
+NetworkDomain::newConnection: localhost:23412, now 2 active connections
+ Reg of remote connection localhost:23412
+Connection::start: localhost:23412
+NetworkDomain::newConnection: localhost:23412, now 2 active connections
+
+
+==========================================
+
+#1  O: 14,  X: 14
+       -----------
+      / . O O O O \
+     / O O O O O O \
+    / . . O O O . . \
+   / . . . O . . . . \
+  | . . . . . . . . . |
+   \ . . . . . . . . /
+    \ . . X X X . . /
+     \ X X X X X X /
+      \ X X X X X /
+       -----------
+
+ Search started ...
+There are 44 Moves
+ Search finished after 0.001 secs
+  Found move 'H7/RightUp'
+  Leaves visited: 44 (44 k/s) 
+  Nodes visited: 1 (44 leaves per node)
+X draws 'H7/RightUp' (after 0.000 secs)...
+
+#2  O: 14,  X: 14
+       -----------
+      / . O O O O \
+     / O O O O O O \
+    / . . O O O . . \
+   / . . . O . . . . \
+  | . . . . . . . . . |
+   \ . . . . . X . . /
+    \ . . X X X . . /
+     \ X X X . X X /
+      \ X X X X X /
+       -----------
+
+ Reg of remote connection localhost:23413
