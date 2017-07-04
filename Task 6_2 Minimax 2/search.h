@@ -48,6 +48,23 @@ class SearchCallbacks
     int verbose() { return _verbose; }
     int getnprocs() {return _nprocs;}
     int getmyid () {return _myid;}
+    void incLeavesvisited ()
+    {_leavesVisited++;}
+    void incNodesvisited ()
+    {_nodesVisited++;}
+    void addLeavesvisited (int arg)
+    {_leavesVisited+=arg;}
+    void addNodesvisited (int arg)
+    {_nodesVisited+=arg;}
+    int getLeavesVisited()
+    {return _leavesVisited;}
+    int getNodesVisited()
+    {return _nodesVisited;}
+    void clear()
+    {
+      _nodesVisited=0;
+      _leavesVisited=0;      
+    }
  private:
     int _verbose;
     int _leavesVisited, _nodesVisited;

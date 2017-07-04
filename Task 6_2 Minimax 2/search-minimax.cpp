@@ -56,7 +56,6 @@ void MinimaxStrategy::searchBestMove()
 
     int myid=_sc->getmyid();
     int nprocs=_sc->getnprocs();
-    printf("P %d of %d", myid, nprocs);
     if (myid==0)
       {
 
@@ -66,9 +65,7 @@ void MinimaxStrategy::searchBestMove()
 	char board [500];
 	Move m;
 	MoveList list;
-	//sprintf(board, "%s\n", _board->getState());
 	strncpy(board, _board->getState(), 500);
-	printf("Length: %d", strlen(board));
 	// distribute board to procs 1..nprocs
 	for (int i=1; i<nprocs; i++)
 	  {
@@ -84,38 +81,38 @@ void MinimaxStrategy::searchBestMove()
 	else
 	  bestEval = maxEvaluation();
 	// loop over all moves
-	printf("There are %d Moves\n", list.count());
 	int ctr=0;
 	while(list.getNext(m)) 
 	  {
-	    if (myid%nprocs==ctr)
-	    {
-	      
-	      // draw move, evalute, and restore position
-	      playMove(m);
-	      eval=minimax(0);
-	      takeBack();
-	      if (color==_board->color1)
-		{
-		  if (eval > bestEval) 
-		    {
-		      bestEval = eval;
-		      foundBestMove(0,m,eval);
+	    if (ctr%nprocs==myid)
+	      {
+		
+		// draw move, evalute, and restore position
+		playMove(m);
+		eval=minimax(0);
+		takeBack();
+		if (color==_board->color1)
+		  {
+		    if (eval > bestEval) 
+		      {
+			bestEval = eval;
+			foundBestMove(0,m,eval);
+		      }
 		  }
-		}
-	      else // color 2
-		{
-		  if (eval<bestEval)
-		    {
-		      bestEval=eval;
-		      foundBestMove(0,m,eval);
-		    }
-		}
-	    }
+		else // color 2
+		  {
+		    if (eval<bestEval)
+		      {
+			bestEval=eval;
+			foundBestMove(0,m,eval);
+		      }
+		  }
+	      }
 	    ctr++;
 	  }
 	// recv bestmove from slaves. field, dir, type, value
 	int eval2, type;
+	int leaves, nodes;
 	short field;
 	unsigned char dir;
 	for (int i=1; i<nprocs; i++)
@@ -124,27 +121,32 @@ void MinimaxStrategy::searchBestMove()
 	    MPI_Recv(&type, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
 	    MPI_Recv(&field, 1, MPI_SHORT, i, 0, MPI_COMM_WORLD, &status);
 	    MPI_Recv(&dir, 1, MPI_UNSIGNED_CHAR, i, 0, MPI_COMM_WORLD, &status);
-	    // cmp with own bestmove, update if needed
-	      if (color==_board->color1)
-		{
-		  if (eval2 > bestEval) 
-		    {
-		      bestEval = eval2;
-		      Move::MoveType type = (Move::MoveType) type;
-		      Move newMove (field, dir, type);
-		      foundBestMove(0,newMove,eval2);
+	    MPI_Recv(&leaves, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
+	    MPI_Recv(&nodes, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
+	    _sc->addLeavesvisited(leaves);
+	    _sc->addNodesvisited(nodes);
+	    leaves=nodes=0;
+	    	    // cmp with own bestmove, update if needed
+	    if (color==_board->color1)
+	      {
+		if (eval2 > bestEval) 
+		  {
+		    bestEval = eval2;
+		    Move::MoveType type = (Move::MoveType) type;
+		    Move newMove (field, dir, type);
+		    foundBestMove(0,newMove,eval2);
 		    }
-		}
-	      else // color 2
-		{
-		  if (eval2<bestEval)
-		    {
-		      bestEval = eval2;
-		      Move::MoveType type = (Move::MoveType) type;
-		      Move newMove (field, dir, type);
-		      foundBestMove(0,newMove,eval2);
-		    }
-		}
+	      }
+	    else // color 2
+	      {
+		if (eval2<bestEval)
+		  {
+		    bestEval = eval2;
+		    Move::MoveType type = (Move::MoveType) type;
+		    Move newMove (field, dir, type);
+		    foundBestMove(0,newMove,eval2);
+		  }
+	      }
 	  }
 		
 	finishedNode(0,&m);
@@ -153,21 +155,19 @@ void MinimaxStrategy::searchBestMove()
       {
 	MPI_Status status;
 	int eval=0;
-	char board [500];
-	Move m;
-	MoveList list;
 	int ctr=0;
 	while (1) // once process breaks out of this loop, the whole player terminates!
 	  {
+	    _sc->clear();
 	    // init board
+	    char board [500];
 	    MPI_Recv(board, 500, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
-
-	    if (strncmp(board, "quit", 4)==0) {
+	    Move m;
+	    MoveList list;
+	    if (strncmp(board, "exit", 4)==0) {
 	      break;
 	    }
-	    printf("DEBUG: %s\nDEBUG\n", board);	    
 	    bool check=_board->setState(board);
-	    printf("Has set state\n");
 	    int color = _board->actColor();
 	    int bestEval;
 	    if (color==_board->color1) 
@@ -178,7 +178,7 @@ void MinimaxStrategy::searchBestMove()
 	    generateMoves(list);
 	    while(list.getNext(m))
 	      {
-		if (myid%nprocs==ctr){
+		if (ctr%nprocs==myid){
 		  // draw move, evalute, and restore position
 		  playMove(m);
 		  eval=minimax(0);
@@ -202,12 +202,16 @@ void MinimaxStrategy::searchBestMove()
 		}
 		ctr++;
 	      }
+	    finishedNode(0,&m);
+	    int leaves=_sc->getLeavesVisited();
+	    int nodes=_sc->getNodesVisited();
 	    // send best move to root. dir, type, field, value
 	    MPI_Send(&eval, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
 	    MPI_Send(&_bestMove.type, 1, MPI_INT, 0, 0, MPI_COMM_WORLD); // enum
 	    MPI_Send(&_bestMove.field, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);
 	    MPI_Send(&_bestMove.direction, 1, MPI_UNSIGNED_CHAR, 0, 0, MPI_COMM_WORLD);
-
+	    MPI_Send(&leaves, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+	    MPI_Send(&nodes, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
 	  }
       }
 }
