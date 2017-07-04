@@ -1,0 +1,30 @@
+\section*{6.1 Understanding the code, run sequential version}
+
+\subsection*{Performance}
+Q: \textbf{What performance do you achieve, using best optimization flags for the compiler, if you do game searches up to depth 2,3,4,5 ?} \\
+
+Using gcc with -O3 optimization (tests indicated slightly higher evalrate compared to -O2): 
+\begin{center}
+
+  \begin{tabular} {|l|r|l|}
+    \hline
+    \textbf{Measurement} & \textbf{Evalrate} & \textbf{Total evals} \\ \hline
+    \textbf{depth 2:} &  &  \\ \hline
+    Default & 581k e/s & 98,912 \\ \hline
+    Midgame1 & 481k e/s & 412,533 \\ \hline
+    Midgame2 & 558k e/s & 263,972 \\ \hline
+    Endgame & 572k e/s & 128,197 \\ \hline
+    \textbf{depth 3:} &  &  \\ \hline
+    Default & 589k e/s & 5,045,110 \\ \hline
+    Midgame1 & 484k e/s & 34,327,884 \\ \hline
+    Midgame2 & 561k e/s & 16,256,864 \\ \hline
+    Endgame & 536k e/s & 9,997,545 \\ \hline
+    \textbf{depth 4:} &  &  \\ \hline
+    Default & 574k e/s & 283,320,928 \\ \hline
+    see note below &  &  \\ \hline
+    \textbf{depth 5:} &  &  \\ \hline
+    see note below &  &  \\ \hline
+  \end{tabular}
+
+\end{center}
+Note: depths 4 and 5 were not particularly feasible to run with sequential minimax search (e.g. Default board, depth 4, single move resulted in 8:21 minutes runtime). As complexity increases exponentially with greater depth, so does runtime. Evalrate itself naturally remains the same.
