@@ -10,7 +10,8 @@
 #include "board.h"
 #include "eval.h"
 #include <stdio.h>
-
+#include <string.h>
+#include "mpi.h"
 /**
  * To create your own search strategy:
  * - copy this file into another one,
@@ -35,16 +36,17 @@ class MinimaxStrategy: public SearchStrategy
     // Factory method: just return a new instance of this class
     SearchStrategy* clone() { return new MinimaxStrategy(); }
   void enterSlave();
- private:
-
-    /**
-     * Implementation of the strategy.
-     */
-    void searchBestMove();
-    int minimax (int depth);
+private:
+  
+  /**
+   * Implementation of the strategy.
+   */
+  void searchBestMove();
+  int minimax (int depth);
 };
 void MinimaxStrategy::enterSlave()
 {
+  this->searchBestMove();
   // entry point for slave processes
 }
 
@@ -54,12 +56,25 @@ void MinimaxStrategy::searchBestMove()
 
     int myid=_sc->getmyid();
     int nprocs=_sc->getnprocs();
+    printf("P %d of %d", myid, nprocs);
     if (myid==0)
       {
+
+
+	MPI_Status status;
 	int eval=0;
-	
+	char board [500];
 	Move m;
 	MoveList list;
+	//sprintf(board, "%s", _board->getState());
+	strncpy(board, _board->getState(), 500);
+	printf("Length: %d", strlen(board));
+	// distribute board to procs 1..nprocs
+	for (int i=1; i<nprocs; i++)
+	  {
+	    MPI_Send(board, 500, MPI_CHAR, i, 0, MPI_COMM_WORLD);
+	  }
+	
 	int color = _board->actColor();
 	// generate list of allowed moves, put them into <list>
 	generateMoves(list);
@@ -97,9 +112,31 @@ void MinimaxStrategy::searchBestMove()
 	finishedNode(0,&m);
       } else // slave process
       {
+	MPI_Status status;
+	int eval=0;
+	char board [500];
+	Move m;
+	MoveList list;
+	
 	while (1) // once process breaks out of this loop, it terminates!
 	  {
-	    break;
+	    // init board
+	    MPI_Recv(board, 500, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
+
+	    if (strncmp(board, "quit", 4)==0) {
+	      break;
+	    }
+	    printf("DEBUG: %s\nDEBUG\n", board);	    
+	    bool check=_board->setState(board+4);
+	    printf("Has set state\n");
+	    /*int color = _board->actColor();
+	    int bestEval;
+	    if (color==_board->color1) 
+	      bestEval = minEvaluation();
+	    else
+	      bestEval = maxEvaluation();
+	    */
+
 	  }
       }
 }
