@@ -88,8 +88,10 @@ class SearchStrategy
     virtual SearchStrategy* clone() = 0;
 
     void stopSearch() { _stopSearch = true; }
-
+    
     virtual void enterSlave()=0;
+    void setBoard (Board *b)
+    { _board = b;}
  protected:
     /**
      * Overwrite this to implement your search strategy

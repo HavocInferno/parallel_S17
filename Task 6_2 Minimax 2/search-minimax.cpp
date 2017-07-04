@@ -66,8 +66,9 @@ void MinimaxStrategy::searchBestMove()
 	char board [500];
 	Move m;
 	MoveList list;
-	//sprintf(board, "%s", _board->getState());
+	//sprintf(board, "%s\n", _board->getState());
 	strncpy(board, _board->getState(), 500);
+	//_board->setState("exit");
 	printf("Length: %d", strlen(board));
 	// distribute board to procs 1..nprocs
 	for (int i=1; i<nprocs; i++)
@@ -123,11 +124,12 @@ void MinimaxStrategy::searchBestMove()
 	    // init board
 	    MPI_Recv(board, 500, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
 
-	    if (strncmp(board, "quit", 4)==0) {
+	    if (strncmp(board, "exit", 4)==0) {
 	      break;
 	    }
 	    printf("DEBUG: %s\nDEBUG\n", board);	    
-	    bool check=_board->setState(board+4);
+	    bool check=_board->setState(board);
+	    //bool check=_board->setState("exit");
 	    printf("Has set state\n");
 	    /*int color = _board->actColor();
 	    int bestEval;

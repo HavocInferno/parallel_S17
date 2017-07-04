@@ -296,8 +296,9 @@ int main(int argc, char* argv[])
 	if (host) d.addConnection(host, rport);
 	l.run();
       }
-    else if (1>2)
+    else 
       {
+	ss->setBoard(&b);
 	ss->enterSlave();
       }
     
