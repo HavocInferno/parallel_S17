@@ -34,7 +34,7 @@ class MinimaxStrategy: public SearchStrategy
 
     // Factory method: just return a new instance of this class
     SearchStrategy* clone() { return new MinimaxStrategy(); }
-  void enterSlave(){};
+  void enterSlave();
  private:
 
     /**
@@ -43,51 +43,65 @@ class MinimaxStrategy: public SearchStrategy
     void searchBestMove();
     int minimax (int depth);
 };
-
+void MinimaxStrategy::enterSlave()
+{
+  // entry point for slave processes
+}
 
 void MinimaxStrategy::searchBestMove()
 {
     // we try to maximize bestEvaluation
 
-     int eval=0;
+    int myid=_sc->getmyid();
+    int nprocs=_sc->getnprocs();
+    if (myid==0)
+      {
+	int eval=0;
+	
+	Move m;
+	MoveList list;
+	int color = _board->actColor();
+	// generate list of allowed moves, put them into <list>
+	generateMoves(list);
+	int bestEval;
+	if (color==_board->color1) 
+	  bestEval = minEvaluation();
+	else
+	  bestEval = maxEvaluation();
+	// loop over all moves
+	printf("There are %d Moves\n", list.count());
+	while(list.getNext(m)) {
 
-    Move m;
-    MoveList list;
-    int color = _board->actColor();
-    // generate list of allowed moves, put them into <list>
-    generateMoves(list);
-    int bestEval;
-    if (color==_board->color1) 
-      bestEval = minEvaluation();
-    else
-      bestEval = maxEvaluation();
-    // loop over all moves
-    printf("There are %d Moves\n", list.count());
-    while(list.getNext(m)) {
-
-
-        // draw move, evalute, and restore position
-	playMove(m);
-	eval=minimax(0);
-	takeBack();
-	if (color==_board->color1)
-	  {
-	    if (eval > bestEval) 
-	      {
-		bestEval = eval;
-		foundBestMove(0,m,eval);
+	  
+	  // draw move, evalute, and restore position
+	  playMove(m);
+	  eval=minimax(0);
+	  takeBack();
+	  if (color==_board->color1)
+	    {
+	      if (eval > bestEval) 
+		{
+		  bestEval = eval;
+		  foundBestMove(0,m,eval);
 	      }
+	    }
+	  else // color 2
+	    {
+	      if (eval<bestEval)
+		{
+		  bestEval=eval;
+		  foundBestMove(0,m,eval);
+		}
 	  }
-	else // color 2
+	}
+	finishedNode(0,&m);
+      } else // slave process
+      {
+	while (1) // once process breaks out of this loop, it terminates!
 	  {
-	    if (eval<bestEval)
-	      {
-		bestEval=eval;
-		foundBestMove(0,m,eval);
-	      }
+	    break;
 	  }
-    }
-    finishedNode(0,&m);
+      }
 }
 int MinimaxStrategy::minimax (int depth)
 {
