@@ -1,8 +1,6 @@
 \section*{6.1 Understanding the code, run sequential version}
-
 \subsection*{Performance}
 Q: \textbf{What performance do you achieve, using best optimization flags for the compiler, if you do game searches up to depth 2,3,4,5 ?} \\
-
 Using gcc with -O3 optimization (tests indicated slightly higher evalrate compared to -O2): 
 \begin{center}
 
@@ -23,8 +21,9 @@ Using gcc with -O3 optimization (tests indicated slightly higher evalrate compar
     Default & 574k e/s & 283,320,928 \\ \hline
     see note below &  &  \\ \hline
     \textbf{depth 5:} &  &  \\ \hline
+    Default & 583k e/s & \textgreater 798,092,000 \\ \hline
     see note below &  &  \\ \hline
   \end{tabular}
 
 \end{center}
-Note: depths 4 and 5 were not particularly feasible to run with sequential minimax search (e.g. Default board, depth 4, single move resulted in 8:21 minutes runtime). As complexity increases exponentially with greater depth, so does runtime. Evalrate itself naturally remains the same.
+Note: depths 4 and 5 were not particularly feasible to run with sequential minimax search (e.g. Default board, depth 4, single move resulted in 8:21 minutes runtime, depth 5 results in more than 25 minutes runtime). As complexity increases exponentially with greater depth, so does runtime. Evalrate itself naturally remains the same.
