@@ -1,0 +1,30 @@
+#29  O: 14,  X: 14
+       -----------
+      / . . . . . \
+     / . O O O O . \
+    / . O O . O . . \
+   / . . O O O . . . \
+  | . . O O O . . . . |
+   \ . X O X X X . . /
+    \ . X X X X X . /
+     \ X X X X X . /
+      \ . . . . . /
+       -----------
+
+X about to move...
+
+=========================================================
+Start from this position with
+
+       ./start position-midgame1
+
+Results for "./player <Strength> X"
+(Sequential search, Pentium M, 1.6 GHz)
+
+ Strength |    Move     |  Evaluated  | Time [s] | Rate
+          |             |             |  -O3     | [Evals/s]
+    1       F3/LeftDown           71
+    2       F3-G4/Left         5 199       .064     81 k
+    3       F3-G4/Left       120 718       .649    186 k
+    4       G4/LeftUp      2 485 542     11.067    225 k
+    5       G4/RightDown  15 018 100     70.446    213 k

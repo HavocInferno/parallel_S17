@@ -1,0 +1,106 @@
+\section*{7.2 Bad Parallelization of AlphaBeta}
+
+
+% \subsection*{What is the speedup you get for the different scenarios from subtask 1, related to the performance metric "evaluations/sec", using 2,4,6,8 processes?}
+
+
+% \begin{tikzpicture}
+  % \begin{axis}[
+      % legend style={cells={align=left}},
+      % xtick={1, 2, 4, 6, 8},
+      % xlabel=\#Processes,
+      % ylabel=Speedup,
+      % title=Speedup for Minimax with depth 2,
+      % legend pos = outer north east,
+      % nodes near coords,
+      % scaled ticks = false,
+      % y tick label style={
+        % /pgf/number format/.cd,
+	% fixed,
+        % fixed zerofill,
+	% precision=0,
+        % /tikz/.cd
+      % },
+      % no markers]
+    % \addplot[color=red] coordinates {
+      % (1,1)
+      % (2,1.7)
+      % (4,3.3)
+      % (6,4.9)
+      % (8,6)
+    % };
+    % \addplot[color=blue] coordinates {
+      % (1,1)
+      % (2,1.8)
+      % (4,3.5)
+      % (6,5.4)
+      % (8,7)
+    % };
+    % \addplot[color=black] coordinates {
+      % (1,1)
+      % (2,1.9)
+      % (4,3)
+      % (6,5.3)
+      % (8,7)
+    % };
+    % \addplot[color=green] coordinates {
+      % (1,1)
+      % (2,1.8)
+      % (4,3.6)
+      % (6,5.3)
+      % (8,7.1)
+    % };
+    % \legend{startgame, midgame1, midgame2, endgame}
+  % \end{axis}
+
+% \end{tikzpicture}
+  % \\
+% \begin{tikzpicture}
+  % \begin{axis}[
+      % legend style={cells={align=left}},
+      % xtick={1, 2, 4, 6, 8},
+      % xlabel=\#Processes,
+      % ylabel=Speedup,
+      % title=Speedup for Minimax with depth 3,
+      % legend pos = outer north east,
+      % nodes near coords,
+      % scaled ticks = false,
+      % y tick label style={
+        % /pgf/number format/.cd,
+	% fixed,
+        % fixed zerofill,
+	% precision=0,
+        % /tikz/.cd
+      % },
+      % no markers]
+    % \addplot[color=red] coordinates {
+      % (1,1)
+      % (2,1.7)
+      % (4,3.3)
+      % (6,5)
+      % (8,6.2)
+    % };
+    % \addplot[color=blue] coordinates {
+      % (1,1)
+      % (2,1.9)
+      % (4,3.6)
+      % (6,5.4)
+      % (8,6.9)
+    % };
+    % \addplot[color=black] coordinates {
+      % (1,1)
+      % (2,1.9)
+      % (4,3.6)
+      % (6,5.4)
+      % (8,7.7)
+    % };
+    % \addplot[color=green] coordinates {
+      % (1,1)
+      % (2,2.1)
+      % (4,4.3)
+      % (6,6.11)
+      % (8,8.4)
+    % };
+    % \legend{startgame, midgame1, midgame2, endgame}
+		% \end{axis}
+% \end{tikzpicture}
