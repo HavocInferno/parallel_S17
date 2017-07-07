@@ -19,6 +19,5 @@ module load valgrind
 . /etc/profile
 ./player -h
 #./player -s 1 X -2 -v&
-mpirun -n 8 player -s 1 -n -2 O -v 2&
 ./player -s 2 X -2  &
 ./start

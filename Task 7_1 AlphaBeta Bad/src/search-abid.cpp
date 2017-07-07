@@ -9,6 +9,7 @@
 
 #include "search.h"
 #include "board.h"
+#include "mpi.h"
 
 class ABIDStrategy: public SearchStrategy
 {
@@ -42,63 +43,177 @@ void ABIDStrategy::searchBestMove()
     int alpha = -15000, beta = 15000;
     int nalpha, nbeta, currentValue = 0;
 
-    _pv.clear(_maxDepth);
-    _currentBestMove.type = Move::none;
-    _currentMaxDepth=1;
-    
-    /* iterative deepening loop */
-    do {
+	int nprocs = _sc->getnprocs();
+	int myid = _sc->getmyid();
+	
+	MPI_Status status;
 
-	/* searches on same level with different alpha/beta windows */
-	while(1) {
+	
+	
+	if (myid==0)
+    {
+		
+		char board [500];
+      
+		sprintf(board, "%s\n", _board->getState());
+		// we need to distribute the board to all processes
+		for (int i=1; i<nprocs;i++)
+			{MPI_Send (board, 500, MPI_CHAR, i, 0, MPI_COMM_WORLD);}
+	}
+	else
+	{
+		char board [500];
+		MPI_Recv (board, 500, MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+		// receive boards, set board to val
+		_board->setState(board);
+	}
+	int color = _board->actColor();
+	
+	int bestValue;
+	if (color==_board->color1)
+		bestValue = alpha;
+	else
+		bestValue = beta;
+	
+	Move m;
+    MoveList list;
+	_board->generateMoves(list);
+	int ctr=0;
+	while(list.getNext(m)) 
+	{
+		if (ctr%nprocs==myid||true)
+		{
+			playMove(m);
+			
+			_pv.clear(_maxDepth);
+			_currentBestMove.type = Move::none;
+			_currentMaxDepth=1;
+			/* iterative deepening loop */
+			do {
 
-	    nalpha = alpha, nbeta = beta;
-	    _inPV = (_pv[0].type != Move::none);
+			/* searches on same level with different alpha/beta windows */
+			while(1) {
 
-	    if (_sc && _sc->verbose()) {
-		char tmp[100];
-		sprintf(tmp, "Alpha/Beta [%d;%d] with max depth %d", alpha, beta, _currentMaxDepth);
-		_sc->substart(tmp);
-	    }
+				nalpha = alpha, nbeta = beta;
+				_inPV = (_pv[0].type != Move::none);
 
-	    currentValue = alphabeta(0, alpha, beta);
+				if (_sc && _sc->verbose()) {
+				char tmp[100];
+				sprintf(tmp, "Alpha/Beta [%d;%d] with max depth %d", alpha, beta, _currentMaxDepth);
+				_sc->substart(tmp);
+				}
 
-	    /* stop searching if a win position is found */
-	    if (currentValue > 14900 || currentValue < -14900)
-		_stopSearch = true;
+				currentValue = alphabeta(0, alpha, beta);
 
-	    /* Don't break out if we haven't found a move */
-	    if (_currentBestMove.type == Move::none)
-		_stopSearch = false;
+				/* stop searching if a win position is found */
+				if (currentValue > 14900 || currentValue < -14900)
+				_stopSearch = true;
 
-	    if (_stopSearch) break;
+				/* Don't break out if we haven't found a move */
+				if (_currentBestMove.type == Move::none)
+				_stopSearch = false;
 
-	    /* if result is outside of current alpha/beta window,
-	     * the search has to be rerun with widened alpha/beta
-	     */
-	    if (currentValue <= nalpha) {
-		alpha = -15000;
-		if (beta<15000) beta = currentValue+1;
-		continue;
-	    }
-	    if (currentValue >= nbeta) {
-		if (alpha > -15000) alpha = currentValue-1;
-		beta=15000;
-		continue;
-	    }
-	    break;
+				if (_stopSearch) break;
+
+				/* if result is outside of current alpha/beta window,
+				 * the search has to be rerun with widened alpha/beta
+				 */
+				if (currentValue <= nalpha) {
+				alpha = -15000;
+				if (beta<15000) beta = currentValue+1;
+				continue;
+				}
+				if (currentValue >= nbeta) {
+				if (alpha > -15000) alpha = currentValue-1;
+				beta=15000;
+				continue;
+				}
+				break;
+			}
+
+			/* Window in both directions cause of deepening */
+			alpha = currentValue - 200, beta = currentValue + 200;
+
+			if (_stopSearch) break;
+
+			_currentMaxDepth++;
+			}
+			while(_currentMaxDepth <= _maxDepth);
+			if (color==_board->color1)
+			{
+				if(currentValue>bestValue)
+				{
+					bestValue = currentValue;
+					_bestMove = _currentBestMove;
+				}
+			}
+			else
+			{
+				if(currentValue<bestValue)
+				{
+					bestValue = currentValue;
+					_bestMove = _currentBestMove;
+				}
+			}
+	
+			
+			takeBack();
+		}
+		ctr++;
+	}
+	if(myid==0)
+	{
+		int eval2, type;
+		int leaves, nodes;
+		short field;
+		unsigned char dir;
+		for (int i=1; i<nprocs; i++)
+		{
+			MPI_Recv(&eval2, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
+			MPI_Recv(&type, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
+			MPI_Recv(&field, 1, MPI_SHORT, i, 0, MPI_COMM_WORLD, &status);
+			MPI_Recv(&dir, 1, MPI_UNSIGNED_CHAR, i, 0, MPI_COMM_WORLD, &status);
+			MPI_Recv(&leaves, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
+			MPI_Recv(&nodes, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
+			_sc->addLeavesvisited(leaves);
+			_sc->addNodesvisited(nodes);
+			leaves=nodes=0;
+			// cmp with own bestmove, update if needed
+			if (color==_board->color1)
+			{
+				if (eval2 > bestValue) 
+				{
+					bestValue = eval2;
+					Move::MoveType type = (Move::MoveType) type;
+					Move newMove (field, dir, type);
+					foundBestMove(0,newMove,eval2);
+				}
+			}
+			else // color 2
+			{
+				if (eval2<bestValue)
+				{
+					bestValue = eval2;
+					Move::MoveType type = (Move::MoveType) type;
+					Move newMove (field, dir, type);
+					foundBestMove(0,newMove,eval2);
+				}
+			}
+	  }
+	}
+	else
+	{
+		int leaves=_sc->getLeavesVisited();
+		int nodes=_sc->getNodesVisited();
+		// send best move to root. dir, type, field, value
+		MPI_Send(&bestValue, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+		MPI_Send(&_bestMove.type, 1, MPI_INT, 0, 0, MPI_COMM_WORLD); // enum
+		MPI_Send(&_bestMove.field, 1, MPI_SHORT, 0, 0, MPI_COMM_WORLD);
+		MPI_Send(&_bestMove.direction, 1, MPI_UNSIGNED_CHAR, 0, 0, MPI_COMM_WORLD);
+		MPI_Send(&leaves, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+		MPI_Send(&nodes, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
 	}
 
-	/* Window in both directions cause of deepening */
-	alpha = currentValue - 200, beta = currentValue + 200;
-
-	if (_stopSearch) break;
-
-	_currentMaxDepth++;
-    }
-    while(_currentMaxDepth <= _maxDepth);
-
-    _bestMove = _currentBestMove;
 }
 
 
@@ -206,5 +321,5 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
     return currentValue;
 }
 
-// register ourselve
+// register ourself
 ABIDStrategy abidStrategy;
