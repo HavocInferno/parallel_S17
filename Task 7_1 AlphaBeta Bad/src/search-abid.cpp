@@ -106,54 +106,55 @@ void ABIDStrategy::searchBestMove()
 			do {
 
 			/* searches on same level with different alpha/beta windows */
-			while(1) {
+				while(1) {
 
-				nalpha = alpha, nbeta = beta;
-				_inPV = (_pv[0].type != Move::none);
+					nalpha = alpha, nbeta = beta;
+					_inPV = (_pv[0].type != Move::none);
 
-				if (_sc && _sc->verbose()) {
-				
-				//sprintf(tmp, "Proc %d: Alpha/Beta [%d;%d] with max depth %d",myid, alpha, beta, _currentMaxDepth);
-		
+					if (_sc && _sc->verbose()) {
+					
+					//sprintf(tmp, "Proc %d: Alpha/Beta [%d;%d] with max depth %d",myid, alpha, beta, _currentMaxDepth);
+			
+					}
+					
+					currentValue = alphabeta(0, alpha, beta);
+
+					/* stop searching if a win position is found */
+					if (currentValue > 14900 || currentValue < -14900)
+					_stopSearch = true;
+
+					/* Don't break out if we haven't found a move */
+					if (_currentBestMove.type == Move::none)
+					_stopSearch = false;
+
+					if (_stopSearch) break;
+
+					/* if result is outside of current alpha/beta window,
+					 * the search has to be rerun with widened alpha/beta
+					 */
+					if (currentValue <= nalpha) {
+					alpha = -15000;
+					if (beta<15000) beta = currentValue+1;
+					continue;
+					}
+					if (currentValue >= nbeta) {
+					if (alpha > -15000) alpha = currentValue-1;
+					beta=15000;
+					continue;
+					}
+					break;
 				}
 				
-				currentValue = alphabeta(0, alpha, beta);
-
-				/* stop searching if a win position is found */
-				if (currentValue > 14900 || currentValue < -14900)
-				_stopSearch = true;
-
-				/* Don't break out if we haven't found a move */
-				if (_currentBestMove.type == Move::none)
-				_stopSearch = false;
-
+				
+				/* Window in both directions cause of deepening */
+				alpha = currentValue - 200, beta = currentValue + 200;
+			
 				if (_stopSearch) break;
 
-				/* if result is outside of current alpha/beta window,
-				 * the search has to be rerun with widened alpha/beta
-				 */
-				if (currentValue <= nalpha) {
-				alpha = -15000;
-				if (beta<15000) beta = currentValue+1;
-				continue;
-				}
-				if (currentValue >= nbeta) {
-				if (alpha > -15000) alpha = currentValue-1;
-				beta=15000;
-				continue;
-				}
-				break;
-			}
-			
-			takeBack();
-			/* Window in both directions cause of deepening */
-			alpha = currentValue - 200, beta = currentValue + 200;
-		
-			if (_stopSearch) break;
-
-			_currentMaxDepth++;
+				_currentMaxDepth++;
 			}
 			while(_currentMaxDepth <= _maxDepth);
+			takeBack();
 			if (color==_board->color1)
 			{
 				if(currentValue>bestValue)
