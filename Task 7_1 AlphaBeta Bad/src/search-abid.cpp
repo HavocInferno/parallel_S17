@@ -18,7 +18,11 @@ class ABIDStrategy: public SearchStrategy
     SearchStrategy* clone() { return new ABIDStrategy(); }
 
     Move& nextMove() { return _pv[1]; }
-  void enterSlave(){};
+  void enterSlave(){
+	  while(true)
+		this->searchBestMove();
+  // entry point for slave processes
+}
  private:
     void searchBestMove();
     /* recursive alpha/beta search */
@@ -38,6 +42,7 @@ class ABIDStrategy: public SearchStrategy
  * Does iterative deepening and alpha/beta width handling, and
  * calls alpha/beta search
  */
+ 
 void ABIDStrategy::searchBestMove()
 {    
     int alpha = -15000, beta = 15000;
@@ -48,20 +53,25 @@ void ABIDStrategy::searchBestMove()
 	
 	MPI_Status status;
 
-	
+
 	
 	if (myid==0)
     {
-		
+		printf("Total num of porcs: %d\n", nprocs);
 		char board [500];
       
 		sprintf(board, "%s\n", _board->getState());
 		// we need to distribute the board to all processes
 		for (int i=1; i<nprocs;i++)
-			{MPI_Send (board, 500, MPI_CHAR, i, 0, MPI_COMM_WORLD);}
+		{
+			printf("Proc %d: Sending board to %d\n", myid, i);
+			MPI_Send (board, 500, MPI_CHAR, i, 0, MPI_COMM_WORLD);
+		}
 	}
 	else
 	{
+		
+		printf("Proc %d: Receiving board\n", myid);
 		char board [500];
 		MPI_Recv (board, 500, MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 		// receive boards, set board to val
@@ -77,11 +87,15 @@ void ABIDStrategy::searchBestMove()
 	
 	Move m;
     MoveList list;
+	char tmp[100];
+	//sprintf(tmp, "Proc %d: Generating moves list\n",myid);
+	//_sc->substart(tmp);
 	_board->generateMoves(list);
 	int ctr=0;
+	printf("Proc %d: Starting alpha beta\n",myid);
 	while(list.getNext(m)) 
 	{
-		if (ctr%nprocs==myid||true)
+		if (ctr%nprocs==myid)
 		{
 			playMove(m);
 			
@@ -98,11 +112,11 @@ void ABIDStrategy::searchBestMove()
 				_inPV = (_pv[0].type != Move::none);
 
 				if (_sc && _sc->verbose()) {
-				char tmp[100];
-				sprintf(tmp, "Alpha/Beta [%d;%d] with max depth %d", alpha, beta, _currentMaxDepth);
-				_sc->substart(tmp);
+				
+				//sprintf(tmp, "Proc %d: Alpha/Beta [%d;%d] with max depth %d",myid, alpha, beta, _currentMaxDepth);
+		
 				}
-
+				
 				currentValue = alphabeta(0, alpha, beta);
 
 				/* stop searching if a win position is found */
@@ -130,10 +144,11 @@ void ABIDStrategy::searchBestMove()
 				}
 				break;
 			}
-
+			
+			takeBack();
 			/* Window in both directions cause of deepening */
 			alpha = currentValue - 200, beta = currentValue + 200;
-
+		
 			if (_stopSearch) break;
 
 			_currentMaxDepth++;
@@ -157,12 +172,17 @@ void ABIDStrategy::searchBestMove()
 			}
 	
 			
-			takeBack();
+			
 		}
 		ctr++;
 	}
+	
+	printf("Proc %d: Done with everything\n",myid);
 	if(myid==0)
 	{
+		
+		printf("Proc %d: Receiving\n",myid);
+		//_sc->substart(tmp);
 		int eval2, type;
 		int leaves, nodes;
 		short field;
@@ -203,6 +223,8 @@ void ABIDStrategy::searchBestMove()
 	}
 	else
 	{
+		printf("Proc %d: Sending\n",myid);
+		//_sc->substart(tmp);
 		int leaves=_sc->getLeavesVisited();
 		int nodes=_sc->getNodesVisited();
 		// send best move to root. dir, type, field, value
@@ -229,6 +251,8 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
     Move m;
     MoveList list;
     bool depthPhase, doDepthSearch;
+	int nprocs = _sc->getnprocs();
+	int myid = _sc->getmyid();
 
     /* We make a depth search for the following move types... */
     int maxType = (depth < _currentMaxDepth-1)  ? Move::maxMoveType :
@@ -239,9 +263,8 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
 
     if (_sc && _sc->verbose()) {
 	    char tmp[100];
-	    sprintf(tmp, "Alpha/Beta [%d;%d], %d moves (%d depth)", alpha, beta,
-		    list.count(Move::none), list.count(maxType));
-	    _sc->startedNode(depth, tmp);
+	    sprintf(tmp, "Proc %d: Alpha/Beta [%d;%d], %d moves (%d depth)",myid, alpha, beta,list.count(Move::none), list.count(maxType));
+	  //  _sc->startedNode(depth, tmp);
     }
 
     /* check for an old best move in principal variation */
