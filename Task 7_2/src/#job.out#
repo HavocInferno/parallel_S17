@@ -66,291 +66,26 @@ NetworkDomain::newConnection: localhost:23412, now 2 active connections
 
  Search started ...
  Subsearch Alpha/Beta [-15000;15000] with max depth 1 ...
-Reaches nodepthphase for pv.
-Seeding Board toprocess 1
-Seeding depth and maxdepth to  1
-Seeding maxtypeprocess 1
-Finished seeding to process 1, Alpha: -245, Beta: 15000
-Iteration 1
-Worker is in iteration 0 before kill
-Worker is in iteration 1 after kill
-Played move! Alpha: -245, Beta: 15000
-Sent stuff back
-Worker is in iteration 1 before kill
-Iteration 2
-Worker is in iteration 2 after kill
-Played move! Alpha: -245, Beta: 15000
-Sent stuff back
-Worker is in iteration 2 before kill
-Iteration 3
-Worker is in iteration 3 after kill
-Played move! Alpha: 547, Beta: 15000
-Sent stuff back
-Worker is in iteration 3 before kill
-Worker is in iteration 4 after kill
-Played move! Alpha: 712, Beta: 15000
-Sent stuff back
-Worker is in iteration 4 before kill
-Iteration 4
-Iteration 5
-Worker is in iteration 5 after kill
-Played move! Alpha: 712, Beta: 15000
-Sent stuff back
-Worker is in iteration 5 before kill
-Worker is in iteration 6 after kill
-Played move! Alpha: 712, Beta: 15000
-Iteration 6
-Iteration 7
-Sent stuff back
-Worker is in iteration 6 before kill
-Worker is in iteration 7 after kill
-Played move! Alpha: 802, Beta: 15000
-Sent stuff back
-Worker is in iteration 7 before kill
-Worker is in iteration 8 after kill
-Played move! Alpha: 802, Beta: 15000
-Iteration 8
-Iteration 9
-Sent stuff back
-Worker is in iteration 8 before kill
-Worker is in iteration 9 after kill
-Played move! Alpha: 802, Beta: 15000
-Sent stuff back
-Worker is in iteration 9 before kill
-Worker is in iteration 10 after kill
-Iteration 10
-Iteration 11
-Played move! Alpha: 819, Beta: 15000
-Sent stuff back
-Worker is in iteration 10 before kill
-Worker is in iteration 11 after kill
-Played move! Alpha: 819, Beta: 15000
-Sent stuff back
-Worker is in iteration 11 before kill
-Worker is in iteration 12 after kill
-Iteration 12
-Iteration 13
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 12 before kill
-Worker is in iteration 13 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 13 before kill
-Worker is in iteration 14 after kill
-Iteration 14
-Iteration 15
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 14 before kill
-Worker is in iteration 15 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 15 before kill
-Worker is in iteration 16 after kill
-Iteration 16
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 16 before kill
-Worker is in iteration 17 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 17 before kill
-Worker is in iteration 18 after kill
-Iteration 17
-Iteration 18
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 18 before kill
-Worker is in iteration 19 after kill
-Played move! Alpha: 970, Beta: 15000
-Iteration 19
-Iteration 20
-Sent stuff back
-Worker is in iteration 19 before kill
-Worker is in iteration 20 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 20 before kill
-Worker is in iteration 21 after kill
-Played move! Alpha: 970, Beta: 15000
-Iteration 21
-Iteration 22
-Sent stuff back
-Worker is in iteration 21 before kill
-Worker is in iteration 22 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 22 before kill
-Worker is in iteration 23 after kill
-Iteration 23
-Iteration 24
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 23 before kill
-Worker is in iteration 24 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 24 before kill
-Worker is in iteration 25 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 25 before kill
-Iteration 25
-Iteration 26
-Worker is in iteration 26 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 26 before kill
-Worker is in iteration 27 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 27 before kill
-Worker is in iteration 28 after kill
-Iteration 27
-Iteration 28
-Iteration 29
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 28 before kill
-Worker is in iteration 29 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 29 before kill
-Worker is in iteration 30 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 30 before kill
-Iteration 30
-Iteration 31
-Worker is in iteration 31 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 31 before kill
-Worker is in iteration 32 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 32 before kill
-Worker is in iteration 33 after kill
-Iteration 32
-Iteration 33
-Iteration 34
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 33 before kill
-Worker is in iteration 34 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 34 before kill
-Worker is in iteration 35 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 35 before kill
-Worker is in iteration 36 after kill
-Played move! Alpha: 970, Beta: 15000
-Iteration 35
-Iteration 36
-Iteration 37
-Sent stuff back
-Worker is in iteration 36 before kill
-Worker is in iteration 37 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 37 before kill
-Worker is in iteration 38 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 38 before kill
-Worker is in iteration 39 after kill
-Played move! Alpha: 970, Beta: 15000
-Iteration 38
-Iteration 39
-Iteration 40
-Sent stuff back
-Worker is in iteration 39 before kill
-Worker is in iteration 40 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 40 before kill
-Worker is in iteration 41 after kill
-Played move! Alpha: 970, Beta: 15000
-Iteration 41
-Iteration 42
-Iteration 43
-Sent stuff back
-Worker is in iteration 41 before kill
-Worker is in iteration 42 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 42 before kill
-Worker is in iteration 43 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 43 before kill
-Worker is in iteration 44 after kill
-Iteration 44
-Iteration 45
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 44 before kill
-Worker is in iteration 45 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 45 before kill
-Worker is in iteration 46 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 46 before kill
-Iteration 46
-Iteration 47
-Worker is in iteration 47 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 47 before kill
-Worker is in iteration 48 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 48 before kill
-Worker is in iteration 49 after kill
-Played move! Alpha: 970, Beta: 15000
-Iteration 48
-Iteration 49
-Iteration 50
-Sent stuff back
-Worker is in iteration 49 before kill
-Worker is in iteration 50 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 50 before kill
-Worker is in iteration 51 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 51 before kill
-Iteration 51
-Iteration 52
-Iteration 53
-Worker is in iteration 52 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 52 before kill
-Worker is in iteration 53 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 53 before kill
-Worker is in iteration 54 after kill
-Played move! Alpha: 970, Beta: 15000
- Search finished after 0.001 secs
-  Found move 'F6/LeftDown'
-  Leaves visited: 1 (1 k/s) 
-  Nodes visited: 1 (1 leaves per node)
-X draws 'F6/LeftDown' (after 0.000 secs)...
-Iteration 54
-Sent stuff back
-Worker is in iteration 54 before kill
-Worker is in iteration 55 after kill
-Played move! Alpha: 970, Beta: 15000
-Sent stuff back
-Worker is in iteration 55 before kill
+ Subsearch Alpha/Beta [-299;101] with max depth 2 ...
+Entered outer loop
+Entered outer loop
+ Subsearch Alpha/Beta [-400;0] with max depth 3 ...
+Entered outer loop
+Entered outer loop
+ EvalRate 0 k/s (17111 evals, 1288342238 msecs)
+ EvalRate 0 k/s (23111 evals, 1288342251 msecs)
+ EvalRate 0 k/s (29111 evals, 1288342263 msecs)
+ EvalRate 0 k/s (35111 evals, 1288342276 msecs)
+ EvalRate 0 k/s (41111 evals, 1288342288 msecs)
+ EvalRate 0 k/s (47111 evals, 1288342300 msecs)
+ EvalRate 0 k/s (53111 evals, 1288342313 msecs)
+ EvalRate 0 k/s (59111 evals, 1288342324 msecs)
+ EvalRate 0 k/s (65111 evals, 1288342337 msecs)
+ Search finished after 0.114 secs
+  Found move 'F3-G4/Left'
+  Leaves visited: 3 (0 k/s) 
+  Nodes visited: 8 (0 leaves per node)
+X draws 'F3-G4/Left' (after 0.114 secs)...
 
 #30  O: 14,  X: 14
        -----------
@@ -359,14 +94,15 @@ Worker is in iteration 55 before kill
     / . O O . O . . \
    / . . O O O . . . \
   | . . O O O . . . . |
-   \ . X O X . X . . /
-    \ . X X X X X . /
+   \ X . O X X X . . /
+    \ X . X X X X . /
      \ X X X X X . /
-      \ . X . . . /
+      \ . . . . . /
        -----------
 
-O draws 'D4/LeftDown/Out' (after 0.000 secs)...
+Entered outer loop
  Reg of remote connection localhost:23413
+O draws 'F4/RightUp' (after 0.000 secs)...
 Connection::start: localhost:23413
 NetworkDomain::newConnection: localhost:23413, now 2 active connections
 
@@ -388,39 +124,103 @@ NetworkDomain::newConnection: localhost:23413, now 2 active connections
 
  Search started ...
  Subsearch Alpha/Beta [-15000;15000] with max depth 1 ...
-Reaches nodepthphase for pv.
-Seeding Board toprocess 1
-Seeding depth and maxdepth to  1
-Seeding maxtypeprocess 1
-Finished seeding to process 1, Alpha: -245, Beta: 15000
-Iteration 1
- Search finished after 0.001 secs
-  Found move 'F6/LeftDown'
-  Leaves visited: 1 (1 k/s) 
-  Nodes visited: 1 (1 leaves per node)
-X draws 'F6/LeftDown' (after 0.000 secs)...
+ Subsearch Alpha/Beta [-299;101] with max depth 2 ...
+Entered outer loop
+Entered outer loop
+ Subsearch Alpha/Beta [-400;0] with max depth 3 ...
+Entered outer loop
+Entered outer loop
+ EvalRate 0 k/s (71111 evals, 1288342362 msecs)
+ EvalRate 0 k/s (77111 evals, 1288342374 msecs)
+ EvalRate 0 k/s (83111 evals, 1288342387 msecs)
+ EvalRate 0 k/s (89111 evals, 1288342399 msecs)
+ EvalRate 0 k/s (95111 evals, 1288342412 msecs)
+ EvalRate 0 k/s (101111 evals, 1288342423 msecs)
+ EvalRate 0 k/s (107111 evals, 1288342436 msecs)
+ EvalRate 0 k/s (113111 evals, 1288342448 msecs)
+ EvalRate 0 k/s (119111 evals, 1288342461 msecs)
+ Search finished after 0.114 secs
+  Found move 'F3-G4/Left'
+  Leaves visited: 3 (0 k/s) 
+  Nodes visited: 8 (0 leaves per node)
+X draws 'F3-G4/Left' (after 0.114 secs)...
 
 #30  O: 14,  X: 14
-      make
- -----------
+       -----------
       / . . . . . \
      / . O O O O . \
     / . O O . O . . \
    / . . O O O . . . \
   | . . O O O . . . . |
-   \ . X O X . X . . /
-    \ . X X X X X . /
+   \ X . O X X X . . /
+    \ X . X X X X . /
      \ X X X X X . /
-      \ . X . . . /
+      \ . . . . . /
        -----------
 
-Fatal error in MPI_Recv: Message truncated, error stack:
-MPI_Recv(204).....................: MPI_Recv(buf=0x7ffe7bb6b6b8, count=1, MPI_INT, src=0, tag=MPI_ANY_TAG, MPI_COMM_WORLD, status=0x7ffe7bb6b684) failed
-MPIDI_CH3U_Receive_data_found(131): Message from rank 0 and tag 1 truncated; 500 bytes received but buffer size is 4
+Entered outer loop
+ Reg of remote connection localhost:23413
+O draws 'F4/RightUp' (after 0.000 secs)...
+Connection::start: localhost:23413
+NetworkDomain::newConnection: localhost:23413, now 2 active connections
+
+
+==========================================
+
+#31  O: 14,  X: 14
+       -----------
+      / . . . . . \
+     / . O O O O . \
+    / . O O O O . . \
+   / . . O O O . . . \
+  | . . O O O . . . . |
+   \ X . . X X X . . /
+    \ X . X X X X . /
+     \ X X X X X . /
+      \ . . . . . /
+       -----------
+
+ Search started ...
+ Subsearch Alpha/Beta [-15000;15000] with max depth 1 ...
+ Subsearch Alpha/Beta [-361;39] with max depth 2 ...
+Entered outer loop
+Entered outer loop
+ EvalRate 0 k/s (125111 evals, 1288342487 msecs)
+ Subsearch Alpha/Beta [-348;52] with max depth 3 ...
+Entered outer loop
+Entered outer loop
+Entered outer loop
+ EvalRate 0 k/s (131111 evals, 1288342501 msecs)
+ EvalRate 0 k/s (137111 evals, 1288342516 msecs)
+ EvalRate 0 k/s (143111 evals, 1288342531 msecs)
+ EvalRate 0 k/s (149111 evals, 1288342545 msecs)
+ EvalRate 0 k/s (155111 evals, 1288342559 msecs)
+ EvalRate 0 k/s (161111 evals, 1288342573 msecs)
+ Search finished after 0.104 secs
+  Found move 'F2-H4/RightUp'
+  Leaves visited: 3 (0 k/s) 
+  Nodes visited: 6 (0 leaves per node)
+X draws 'F2-H4/RightUp' (after 0.104 secs)...
+
+#32  O: 14,  X: 14
+       -----------
+      / . . . . . \
+     / . O O O O . \
+    / . O O O O . . \
+   / . . O O O . . . \
+  | . X O O O . . . . |
+   \ . X . X X X . . /
+    \ . X X X X X . /
+     \ . X X X X . /
+      \ . . . . . /
+       -----------
+
+Entered outer loop
 Terminating because given number of moves drawn.
 Fatal error in MPI_Send: Invalid buffer pointer, error stack:
-MPI_Send(196): MPI_Send(buf=(nil), count=1, MPI_INT, dest=1, tag=2, MPI_COMM_WORLD) failed
+MPI_Send(196): MPImake_Send(buf=(nil), count=1, MPI_INT, dest=1, tag=2, MPI_COMM_WORLD) failed
 MPI_Send(136): Null buffer pointer
+O draws 'B2/LeftDown' (after 0.000 secs)...
 
 #29  O: 14,  X: 14
        -----------
@@ -436,7 +236,7 @@ MPI_Send(136): Null buffer pointer
        -----------
 
 X about to move...
-X draws move 'F6/LeftDown'...
+X draws move 'F3-G4/Left'...
 
 #30  O: 14,  X: 14
        -----------
@@ -445,29 +245,45 @@ X draws move 'F6/LeftDown'...
     / . O O . O . . \
    / . . O O O . . . \
   | . . O O O . . . . |
-   \ . X O X . X . . /
-    \ . X X X X X . /
+   \ X . O X X X . . /
+    \ X . X X X X . /
      \ X X X X X . /
-      \ . X . . . /
+      \ . . . . . /
        -----------
 
 O about to move...
-O draws move 'D4/LeftDown/Out'...
+O draws move 'F4/RightUp'...
 
-#31  O: 14,  X: 13
+#31  O: 14,  X: 14
        -----------
       / . . . . . \
      / . O O O O . \
-    / . O O . O . . \
-   / . . O . O . . . \
+    / . O O O O . . \
+   / . . O O O . . . \
   | . . O O O . . . . |
-   \ . X O X . X . . /
-    \ . O X X X X . /
+   \ X . . X X X . . /
+    \ X . X X X X . /
      \ X X X X X . /
-      \ . X . . . /
+      \ . . . . . /
        -----------
 
 X about to move...
 WARNING: Got a board which is not reachable via a valid move !?
-O draws 'D4/LeftDown/Out' (after 0.001 secs)...
+WARNING: Got a board which is not reachable via a valid move !?
+X draws move 'F2-H4/RightUp'...
+
+#32  O: 14,  X: 14
+       -----------
+      / . . . . . \
+     / . O O O O . \
+    / . O O O O . . \
+   / . . O O O . . . \
+  | . X O O O . . . . |
+   \ . X . X X X . . /
+    \ . X X X X X . /
+     \ . X X X X . /
+      \ . . . . . /
+       -----------
+
+O about to move...
 Terminating because given number of moves drawn.

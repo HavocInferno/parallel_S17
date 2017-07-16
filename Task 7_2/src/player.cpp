@@ -297,19 +297,21 @@ int main(int argc, char* argv[])
 	l.install(&d);
 	if (host) d.addConnection(host, rport);
 	l.run();
+        fprintf(stderr, "Root is done\n");
         // kill slaves
-        int i;
+        int ctr=1;
+        char i[500];
 	if (nprocs>1)
-	  for (i=1; i<nprocs; i++)
+	  for (; ctr<nprocs; ctr++)
 	    {
-	      MPI_Send(0, 1, MPI_INT, i, DIE, MPI_COMM_WORLD);
-	    }
+	      MPI_Send(&i, 500, MPI_CHAR, ctr, DIE, MPI_COMM_WORLD);
+              }
       }
     else 
       {
 	ss->setBoard(&b);
 	ss->enterSlave();
-        fprintf(stderr, "Process %d exits", myid);
+        fprintf(stderr, "Process %d exits\n", myid);
       }
     
     
