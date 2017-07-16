@@ -77,6 +77,7 @@ void ABIDStrategy::searchBestMove()
 		// receive boards, set board to val
 		_board->setState(board);
 	}
+	MPI_Barrier(MPI_COMM_WORLD);
 	int color = _board->actColor();
 	
 	int bestValue;
@@ -92,7 +93,7 @@ void ABIDStrategy::searchBestMove()
 	//_sc->substart(tmp);
 	_board->generateMoves(list);
 	int ctr=0;
-	printf("Proc %d: Starting alpha beta\n",myid);
+	printf("Proc %d: Starting alpha beta with best value %d\n",myid, bestValue);
 	while(list.getNext(m)) 
 	{
 		if (ctr%nprocs==myid)
@@ -113,11 +114,11 @@ void ABIDStrategy::searchBestMove()
 
 					if (_sc && _sc->verbose()) {
 					
-					//sprintf(tmp, "Proc %d: Alpha/Beta [%d;%d] with max depth %d",myid, alpha, beta, _currentMaxDepth);
-			
+					sprintf(tmp, "Proc %d: Alpha/Beta [%d;%d] with max depth %d",myid, alpha, beta, _currentMaxDepth);
+					_sc->substart(tmp);
 					}
 					
-					currentValue = alphabeta(0, alpha, beta);
+					currentValue = -alphabeta(1, -beta, -alpha);
 
 					/* stop searching if a win position is found */
 					if (currentValue > 14900 || currentValue < -14900)
@@ -161,6 +162,8 @@ void ABIDStrategy::searchBestMove()
 				{
 					bestValue = currentValue;
 					_bestMove = _currentBestMove;
+					
+					printf("Proc %d: Updating best value %d\n",myid, bestValue);
 				}
 			}
 			else
@@ -169,16 +172,20 @@ void ABIDStrategy::searchBestMove()
 				{
 					bestValue = currentValue;
 					_bestMove = _currentBestMove;
+					
+					printf("Proc %d: Updating best value %d\n",myid, bestValue);
 				}
 			}
 	
 			
-			
+		printf("Proc %d: Continuing wit bestValue %d\n",myid, bestValue);
 		}
 		ctr++;
+		
 	}
 	
-	printf("Proc %d: Done with everything\n",myid);
+	printf("Proc %d: Done with everything, sending bestValue %d\n",myid, bestValue);
+	MPI_Barrier(MPI_COMM_WORLD);
 	if(myid==0)
 	{
 		
@@ -236,6 +243,7 @@ void ABIDStrategy::searchBestMove()
 		MPI_Send(&leaves, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
 		MPI_Send(&nodes, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
 	}
+	MPI_Barrier(MPI_COMM_WORLD);
 
 }
 
@@ -264,8 +272,8 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
 
     if (_sc && _sc->verbose()) {
 	    char tmp[100];
-	    sprintf(tmp, "Proc %d: Alpha/Beta [%d;%d], %d moves (%d depth)",myid, alpha, beta,list.count(Move::none), list.count(maxType));
-	  //  _sc->startedNode(depth, tmp);
+	   // sprintf(tmp, "Proc %d: Alpha/Beta [%d;%d], %d moves (%d depth)",myid, alpha, beta,list.count(Move::none), list.count(maxType));
+	   // _sc->startedNode(depth, tmp);
     }
 
     /* check for an old best move in principal variation */
