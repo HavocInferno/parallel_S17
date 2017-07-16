@@ -299,10 +299,11 @@ int main(int argc, char* argv[])
 	l.run();
         // kill slaves
         int i;
-        for (i=1; i<nprocs; i++)
-        {
-          MPI_Send(0, 1, MPI_INT, i, DIE, MPI_COMM_WORLD);
-        }
+	if (nprocs>1)
+	  for (i=1; i<nprocs; i++)
+	    {
+	      MPI_Send(0, 1, MPI_INT, i, DIE, MPI_COMM_WORLD);
+	    }
       }
     else 
       {
