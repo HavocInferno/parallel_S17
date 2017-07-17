@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "search.h"
 #include "board.h"
@@ -19,8 +20,10 @@ class ABIDStrategy: public SearchStrategy
 
     Move& nextMove() { return _pv[1]; }
   void enterSlave(){
-	  while(true)
+	killyourself = false;
+	while(!killyourself)
 		this->searchBestMove();
+	printf("Killing myself.\n" );
   // entry point for slave processes
 }
  private:
@@ -33,6 +36,7 @@ class ABIDStrategy: public SearchStrategy
     Move _currentBestMove;
     bool _inPV;
     int _currentMaxDepth;
+	bool killyourself;
 };
 
 
@@ -75,6 +79,10 @@ void ABIDStrategy::searchBestMove()
 		char board [500];
 		MPI_Recv (board, 500, MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 		// receive boards, set board to val
+		if (strncmp(board, "exit", 4)==0) {
+	      killyourself = true;
+		  return;
+	    }
 		_board->setState(board);
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -161,9 +169,9 @@ void ABIDStrategy::searchBestMove()
 				if(currentValue>bestValue)
 				{
 					bestValue = currentValue;
-					_bestMove = _currentBestMove;
-					
-					printf("Proc %d: Updating best value %d\n",myid, bestValue);
+					//_bestMove = _currentBestMove;
+					_bestMove = m;
+					printf("Proc %d: Updating best value %d with move %s\n",myid, bestValue, _currentBestMove.name());
 				}
 			}
 			else
@@ -171,9 +179,9 @@ void ABIDStrategy::searchBestMove()
 				if(currentValue<bestValue)
 				{
 					bestValue = currentValue;
-					_bestMove = _currentBestMove;
-					
-					printf("Proc %d: Updating best value %d\n",myid, bestValue);
+					//_bestMove = _currentBestMove;
+					_bestMove = m;
+					printf("Proc %d: Updating best value %d, move %s\n",myid, bestValue, _bestMove.name());
 				}
 			}
 	
@@ -184,7 +192,7 @@ void ABIDStrategy::searchBestMove()
 		
 	}
 	
-	printf("Proc %d: Done with everything, sending bestValue %d\n",myid, bestValue);
+	printf("Proc %d: Done with everything, sending bestValue %d, Move %s\n",myid, bestValue, _bestMove.name());
 	MPI_Barrier(MPI_COMM_WORLD);
 	if(myid==0)
 	{
@@ -199,6 +207,7 @@ void ABIDStrategy::searchBestMove()
 		{
 			MPI_Recv(&eval2, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
 			MPI_Recv(&type, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
+			printf("Proc %d: Received type %d from %d\n",myid, type, i);
 			MPI_Recv(&field, 1, MPI_SHORT, i, 0, MPI_COMM_WORLD, &status);
 			MPI_Recv(&dir, 1, MPI_UNSIGNED_CHAR, i, 0, MPI_COMM_WORLD, &status);
 			MPI_Recv(&leaves, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);
@@ -207,24 +216,31 @@ void ABIDStrategy::searchBestMove()
 			_sc->addNodesvisited(nodes);
 			leaves=nodes=0;
 			// cmp with own bestmove, update if needed
+			printf("Proc %d: Best value is %d, eval2 %d\n",myid, bestValue, eval2);
 			if (color==_board->color1)
 			{
 				if (eval2 > bestValue) 
 				{
+					
 					bestValue = eval2;
 					Move::MoveType type = (Move::MoveType) type;
 					Move newMove (field, dir, type);
 					foundBestMove(0,newMove,eval2);
+					_bestMove = newMove;
+					printf("Proc %d: Updating best value from %d to %d, move %s\n",myid, bestValue, eval2, newMove.name());
 				}
 			}
 			else // color 2
 			{
 				if (eval2<bestValue)
 				{
-					bestValue = eval2;
+					
 					Move::MoveType type = (Move::MoveType) type;
 					Move newMove (field, dir, type);
+					_bestMove = newMove;
 					foundBestMove(0,newMove,eval2);
+					printf("Proc %d: Updating best value from %d to %d, move %s\n",myid, bestValue, eval2, newMove.name());
+					bestValue = eval2;
 				}
 			}
 	  }
@@ -331,6 +347,7 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
 	    _pv.update(depth, m);
 
 	    if (_sc) _sc->foundBestMove(depth, m, currentValue);
+		//printf("Proc %d: found %s with value %d\n", myid, m.name(), value);
 	    if (depth == 0)
 		    _currentBestMove = m;
 
@@ -345,7 +362,8 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
 	}
 
 	if (_stopSearch) break; // depthPhase=false;
-	m.type = Move::none;
+	//if(myid ==0)
+		m.type = Move::none;
     }
     
     if (_sc) _sc->finishedNode(depth, _pv.chain(depth));
