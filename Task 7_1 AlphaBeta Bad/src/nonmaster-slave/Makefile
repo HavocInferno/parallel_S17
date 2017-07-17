@@ -53,3 +53,4 @@ referee.o: referee.cpp board.cpp move.cpp
 search-onelevel.o: search.h board.h eval.h
 search-abid.o: search.h board.h
 search-minimax.o: search.h board.h
+

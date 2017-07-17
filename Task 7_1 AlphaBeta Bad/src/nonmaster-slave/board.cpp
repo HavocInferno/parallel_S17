@@ -1000,64 +1000,63 @@ bool Board::setState(char* s)
   _msecsToPlay[color2] = 0;
  
   if (s == 0) return false;
-
   while(*s) {
-      if (*s == '#') {
-	  int m = 0;
-	  int color = -1;
+    if (*s == '#') {
+      int m = 0;
+      int color = -1;
+      s++;
+      // parse "#<moveNo> - [O: <count> / <secsToPlay>, X:]"
+      while((*s >= '0') && (*s <= '9')) m = 10*m + (*s++ -'0');
+      _moveNo = m;
+      
+      while(*s) {
+	if (*s == '\n') break;
+	if (*s == 'O') { color = color1; }
+	if (*s == 'X') { color = color2; }
+	if ((*s == '(') && (color>-1)) {
 	  s++;
-	  // parse "#<moveNo> - [O: <count> / <secsToPlay>, X:]"
-	  while((*s >= '0') && (*s <= '9')) m = 10*m + (*s++ -'0');
-	  _moveNo = m;
-
-	  while(*s) {
-	      if (*s == '\n') break;
-	      if (*s == 'O') { color = color1; }
-	      if (*s == 'X') { color = color2; }
-	      if ((*s == '(') && (color>-1)) {
-		  s++;
-		  int secs=0, msecs=0;
-		  while(*s==' ') s++;
-		  while((*s >= '0') && (*s <= '9')) secs = 10*secs + (*s++ -'0');
-		  if (*s=='.') {
-		      int val = 100;
-		      s++;
-		      while((*s >= '0') && (*s <= '9')) {
+	  int secs=0, msecs=0;
+	  while(*s==' ') s++;
+	  while((*s >= '0') && (*s <= '9')) secs = 10*secs + (*s++ -'0');
+	  if (*s=='.') {
+	    int val = 100;
+	    s++;
+	    while((*s >= '0') && (*s <= '9')) {
 			  msecs += val * (*s++ -'0');
 			  val /= 10;
-		      }
-		  }
-		  _msecsToPlay[color] = 1000 * secs + msecs;
-		  color = -1;
-	      }
-	      s++;
+	    }
 	  }
+	  _msecsToPlay[color] = 1000 * secs + msecs;
+	  color = -1;
+	}
+	s++;
       }
-      if (row*11+12+column > AllFields) break;
-      if (*s == '.' || *s == 'X' || *s == 'O' ||
-	  *s == 'x' || *s == 'o') {
-	  found = true;
-	  field[row*11+12+column] =
+    }
+    if (row*11+12+column > AllFields) break;
+    if (*s == '.' || *s == 'X' || *s == 'O' ||
+	*s == 'x' || *s == 'o') {
+      found = true;
+      field[row*11+12+column] =
 	      (*s == 'O') ? color1 :
-	      (*s == 'o') ? color1 :
-	      (*s == 'X') ? color2 :
-	      (*s == 'x') ? color2 : free;
-	  if (field[row*11+12+column] == color1) color1Count++;
-	  if (field[row*11+12+column] == color2) color2Count++;
-	  column++;
-      }
-      if (found && (*s == '\n')) {
-	  row++;
-	  if (row < 5) column = 0;
-	  else column = row-4;
-	  if (row >8) break;
-      }
+	(*s == 'o') ? color1 :
+	(*s == 'X') ? color2 :
+	(*s == 'x') ? color2 : free;
+      if (field[row*11+12+column] == color1) color1Count++;
+      if (field[row*11+12+column] == color2) color2Count++;
+      column++;
+    }
+    if (found && (*s == '\n')) {
+      row++;
+      if (row < 5) column = 0;
+      else column = row-4;
+      if (row >8) break;
+    }
       s++;
   }
   if (row <9) return false;
-
+  
   color = ((_moveNo%2)==0) ? color1 : color2;
-
+  
   return true;
 }
 

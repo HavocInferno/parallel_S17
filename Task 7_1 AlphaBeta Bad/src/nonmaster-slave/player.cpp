@@ -87,8 +87,9 @@ void MyDomain::received(char* str)
 	return;
     }
 
+    if (strncmp(str, "pos ", 4)!=0) return;
 
-    b.setState(str);
+    b.setState(str+4);
     if (verbose) {
 	printf("\n\n==========================================\n%s", str+4);
     }
@@ -297,6 +298,7 @@ int main(int argc, char* argv[])
       }
     else 
       {
+	ss->setBoard(&b);
 	ss->enterSlave();
       }
     

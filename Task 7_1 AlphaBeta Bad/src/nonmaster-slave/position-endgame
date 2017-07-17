@@ -1,0 +1,32 @@
+#69  O: 14,  X: 10
+       -----------
+      / . . . . . \
+     / . O . . . . \
+    / . . O . . . . \
+   / . . X . O . . . \
+  | . X X O O O O . . |
+   \ . X . O O O . . /
+    \ . O O O O . . /
+     \ . X X X X . /
+      \ . . X . X /
+       -----------
+
+
+X about to move...
+
+=========================================================
+Start from this position with
+
+       ./start position-endgame
+
+Results for "./player <Strength> X"
+(Sequential search, Pentium M, 1.6 GHz)
+
+ Strength |    Move     |  Evaluated  | Time [s] | Rate
+          |             |             |  -O3     | [Evals/s]
+    1       I9/RightUp           384
+    2       I7/LeftUp/Psh      1 796       .042     43 k
+    3       I7/LeftUp/Psh     17 823       .169    105 k
+    4       I7/LeftUp/Psh     23 266       .255     91 k
+    5       I7/LeftUp/Psh  1 520 313      5.715    266 k
+    6       I7/LeftUp/Psh 11 196 668     39.575    283 k

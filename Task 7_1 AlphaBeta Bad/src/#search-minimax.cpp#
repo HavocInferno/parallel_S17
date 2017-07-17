@@ -79,7 +79,9 @@ void MinimaxStrategy::searchBestMove()
 	  }
 	else // color 2
         {
-          if (eval<bestEval)
+          if (condition) {
+            
+          } (eval<bestEval)
           {
             bestEval=eval;
 		foundBestMove(0,m,eval);

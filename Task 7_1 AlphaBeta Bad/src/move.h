@@ -137,7 +137,6 @@ class Variation
 {
  public:
   enum { maxDepth = 10 };
-
   Variation() { clear(1); }
 
   /* Does the best sequence have a move for depth d ? */

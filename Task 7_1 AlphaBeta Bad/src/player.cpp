@@ -21,6 +21,8 @@
 #include "network.h"
 #include "mpi.h"
 
+#define DIE 2
+
 /* Global, static vars */
 NetworkLoop l;
 Board b;
@@ -288,18 +290,30 @@ int main(int argc, char* argv[])
 
     b.setSearchStrategy( ss );
     ss->setEvaluator(&ev);
-    ss->registerCallbacks(new SearchCallbacks(verbose, myid, nprocs));
+    
     if (myid==0)
       {
+        ss->registerCallbacks(new SearchCallbacks(1/*verbose*/, myid, nprocs));
 	MyDomain d(lport);
 	l.install(&d);
 	if (host) d.addConnection(host, rport);
 	l.run();
+        fprintf(stderr, "Root is done\n");
+        // kill slaves
+        int ctr=1;
+        char i[500];
+	if (nprocs>1)
+	  for (; ctr<nprocs; ctr++)
+	    {
+	      MPI_Send(&i, 500, MPI_CHAR, ctr, DIE, MPI_COMM_WORLD);
+              }
       }
     else 
       {
-	ss->setBoard(&b);
+        ss->registerCallbacks(new SearchCallbacks(0, myid, nprocs));
+        ss->setBoard(&b);
 	ss->enterSlave();
+        fprintf(stderr, "Process %d exits\n", myid);
       }
     
     

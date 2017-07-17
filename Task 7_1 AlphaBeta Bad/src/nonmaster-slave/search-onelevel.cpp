@@ -28,11 +28,11 @@
 class OneLevelStrategy: public SearchStrategy
 {
  public:
-  // Defines the name of the strategy
-  OneLevelStrategy(): SearchStrategy("OneLevel") {}
-  
-  // Factory method: just return a new instance of this class
-  SearchStrategy* clone() { return new OneLevelStrategy(); }
+    // Defines the name of the strategy
+    OneLevelStrategy(): SearchStrategy("OneLevel") {}
+
+    // Factory method: just return a new instance of this class
+    SearchStrategy* clone() { return new OneLevelStrategy(); }
   void enterSlave(){};
  private:
 
