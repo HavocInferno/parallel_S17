@@ -290,7 +290,7 @@ int main(int argc, char* argv[])
 
     b.setSearchStrategy( ss );
     ss->setEvaluator(&ev);
-    ss->registerCallbacks(new SearchCallbacks(verbose, myid, nprocs));
+    ss->registerCallbacks(new SearchCallbacks(0/*verbose*/, myid, nprocs));
     if (myid==0)
       {
 	MyDomain d(lport);

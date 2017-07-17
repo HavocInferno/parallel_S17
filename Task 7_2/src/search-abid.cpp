@@ -67,11 +67,11 @@ void ABIDStrategy::enterSlave()
 
   while (1)
   {
-    fprintf(stderr, "Entered outer loop\n");
+    //fprintf(stderr, "Entered outer loop\n");
     MPI_Recv(&board, 500, MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
     if (status.MPI_TAG==DIE || strncmp(board, "exit", 4)==0)
     {
-      fprintf(stderr, "%d exits outer loop\n", _sc->getmyid());
+      //fprintf(stderr, "%d exits outer loop\n", _sc->getmyid());
       break;
     } // kills process
     if(_board->setState(board))
@@ -106,7 +106,7 @@ void ABIDStrategy::enterSlave()
       //      fprintf(stderr, "%s", move.print());
       //move.print();
       // receive alpha beta
-
+      
       MPI_Recv(&alpha, 1, MPI_INT, 0, WORK, MPI_COMM_WORLD, &status);
       MPI_Recv(&beta, 1, MPI_INT, 0, WORK, MPI_COMM_WORLD, &status);
       MPI_Recv(&value, 1, MPI_INT, 0, WORK, MPI_COMM_WORLD, &status);
@@ -132,8 +132,11 @@ void ABIDStrategy::enterSlave()
           value = evaluate();
         }
       }
-      //fprintf(stderr, " Val: %d\n",value);
-      _board->takeBack();
+      if (value>=1657&&_maxDepth==_currentMaxDepth&&depth==0)
+      {
+        fprintf(stderr, " Val: %d from process %d\n",value, _sc->getmyid());
+        move.print();
+      }_board->takeBack();
       MPI_Send(&value, 1, MPI_INT, 0, WORK, MPI_COMM_WORLD);
       MPI_Send(&_pv[depth], sizeof(Move)*MAXPVDEPTH, MPI_BYTE, 0, WORK, MPI_COMM_WORLD);
       int nodesVisited = _sc->getNodesVisited();
@@ -168,12 +171,12 @@ void ABIDStrategy::searchBestMove()
     while(1) {
       nalpha = alpha, nbeta = beta;
       _inPV = (_pv[0].type != Move::none);
-          
-      if (_sc && _sc->verbose()) {
+      
+      /*if (_sc && _sc->verbose()) {
         char tmp[100];
         sprintf(tmp, "Alpha/Beta [%d;%d] with max depth %d", alpha, beta, _currentMaxDepth);
         _sc->substart(tmp);
-      }
+        }*/
       
       currentValue = alphabeta(0, alpha, beta);
       
@@ -211,7 +214,6 @@ void ABIDStrategy::searchBestMove()
     _currentMaxDepth++;
   }
   while(_currentMaxDepth <= _maxDepth);
-  //fprintf(stderr, "Best Eval %d\n", currentValue);
   _bestMove = _currentBestMove;
 }
 
@@ -241,12 +243,12 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
     
   _board->generateMoves(list);
     
-  if (_sc && _sc->verbose()) {
+  /*if (_sc && _sc->verbose()) {
     char tmp[100];
     sprintf(tmp, "Alpha/Beta [%d;%d], %d moves (%d depth)", alpha, beta,
             list.count(Move::none), list.count(maxType));
     _sc->startedNode(depth, tmp);
-  }
+    }*/
     
   /* check for an old best move in principal variation */
   if (_inPV) {
@@ -518,6 +520,7 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
         
       }
     }
+    
     //    fprintf(stderr, "Reaches funny region\n");
     if (_sc) _sc->finishedNode(depth, _pv.chain(depth));
     delete[] WorkerMoves;
@@ -541,13 +544,13 @@ int ABIDStrategy::alphabetaworker(int depth, int alpha, int beta)
       Move::maxOutType;
     
   _board->generateMoves(list);
-    
+  /*
   if (_sc && _sc->verbose()) {
     char tmp[100];
     sprintf(tmp, "Alpha/Beta [%d;%d], %d moves (%d depth)", alpha, beta,
             list.count(Move::none), list.count(maxType));
     _sc->startedNode(depth, tmp);
-  }
+  }*/
     
   /* check for an old best move in principal variation */
   if (_inPV) {

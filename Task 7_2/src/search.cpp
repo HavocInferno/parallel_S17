@@ -54,7 +54,7 @@ void SearchCallbacks::finished(Move& m)
 	(1000* t2.tv_sec + t2.tv_usec / 1000) -
 	(1000* t1.tv_sec + t1.tv_usec / 1000);
 
-    if (!_verbose) return;
+    //if (!_verbose) return;
 
     if (_msecsPassed <1) _msecsPassed = 1;
     if (_nodesVisited<1) _nodesVisited = 1;
@@ -97,12 +97,12 @@ bool SearchCallbacks::afterEval()
 
     int eps = _leavesVisited / _msecsPassed;
     if (_verbose)
-	printf(" EvalRate %d k/s (%d evals, %d msecs)\n",
-	       eps, _leavesVisited, _msecsPassed);
+      printf(" EvalRate %d k/s (%d evals, %d msecs)\n",
+             eps, _leavesVisited, _msecsPassed);
     if (eps>kevalsPerSec) kevalsPerSec = eps;
 
-    if ((_msecsForSearch > 0) && (_msecsPassed > _msecsForSearch)) {
-	printf(" Stop!\n");
+    if ((_msecsForSearch > 0) && (_msecsPassed > _msecsForSearch)&&_verbose) {
+      printf(" Stop!\n");
 	return true;
     }
 
