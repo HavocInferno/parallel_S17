@@ -285,7 +285,11 @@ void Variation::update(int d, Move& m)
 {
   int i;
   
-  if (d>actMaxDepth) return;
+  if (d>actMaxDepth)
+  {
+    //fprintf(stderr, "Entered update with depth %d, but maxdepth is %d.\n", d, actMaxDepth);
+    return;
+  }
   for(i=d+1;i<=actMaxDepth;i++) {
     move[d][i]=move[d+1][i];
     move[d+1][i].type = Move::none;

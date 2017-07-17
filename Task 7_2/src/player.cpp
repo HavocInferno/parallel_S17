@@ -290,9 +290,10 @@ int main(int argc, char* argv[])
 
     b.setSearchStrategy( ss );
     ss->setEvaluator(&ev);
-    ss->registerCallbacks(new SearchCallbacks(0/*verbose*/, myid, nprocs));
+    
     if (myid==0)
       {
+        ss->registerCallbacks(new SearchCallbacks(1/*verbose*/, myid, nprocs));
 	MyDomain d(lport);
 	l.install(&d);
 	if (host) d.addConnection(host, rport);
@@ -309,7 +310,8 @@ int main(int argc, char* argv[])
       }
     else 
       {
-	ss->setBoard(&b);
+        ss->registerCallbacks(new SearchCallbacks(0, myid, nprocs));
+        ss->setBoard(&b);
 	ss->enterSlave();
         fprintf(stderr, "Process %d exits\n", myid);
       }
