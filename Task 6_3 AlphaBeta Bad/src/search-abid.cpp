@@ -15,7 +15,6 @@
 
 #define WORK 1
 #define DIE 2
-#define MAXPVDEPTH 10
 
 using namespace std;
 
@@ -83,42 +82,30 @@ void ABIDStrategy::enterSlave()
     MPI_Recv(&_currentMaxDepth, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
     MPI_Recv(&maxType, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
     _pv.clear(_maxDepth);
-    //fprintf(stderr, "Board: %s", board);
     
     int ctr = 0;
     while(1)
     {
       int num = 0;
-      //      fprintf(stderr, "Worker is in iteration %d before kill\n", ctr);
       // set move to move to be evaluated
       MPI_Recv(&type, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
       if (status.MPI_TAG==DIE)
       {
-        //fprintf(stderr, "Inner loop terminates\n");
-        // send back best move
         break; // only breaks out of loop for this board position, process still alive and awaits next board
       }
-      //fprintf(stderr, "Worker is in iteration %d after kill\n", ctr++);
       MPI_Recv(&dir, 1, MPI_UNSIGNED_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
       MPI_Recv(&field, 1, MPI_SHORT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
       Move::MoveType t = (Move::MoveType) type; 
       Move move (field, dir , t);
-      //fprintf(stderr,"Move: type=%d, dir=%u, field=%d", type, dir, field);
-      //      fprintf(stderr, "%s", move.print());
-      //move.print();
-      // receive alpha beta
-      
+   
       MPI_Recv(&alpha, 1, MPI_INT, 0, WORK, MPI_COMM_WORLD, &status);
       MPI_Recv(&beta, 1, MPI_INT, 0, WORK, MPI_COMM_WORLD, &status);
       MPI_Recv(&value, 1, MPI_INT, 0, WORK, MPI_COMM_WORLD, &status);
       MPI_Recv(&doDepthSearch, 1, MPI::BOOL, 0, WORK, MPI_COMM_WORLD, &status);
       if (move.type==Move::none) fprintf(stderr, "This should not happen in enterslave!\n");
       _board->playMove(move);
-      //fprintf (stderr, "Played move! Alpha: %d, Beta: %d\n", alpha, beta);
       /* check for a win position first */
       if (!_board->isValid()) {
-        //fprintf(stderr, "DEBUG:\n%s\n", _board->getState());
-        /* Shorter path to win position is better */
         value = 14999-depth;
       }
       else {
@@ -134,7 +121,6 @@ void ABIDStrategy::enterSlave()
         }
       }
       _board->takeBack();
-      // test
       if (value > currentValue) {
         currentValue = value;
         _pv.update(depth, move);
@@ -142,10 +128,7 @@ void ABIDStrategy::enterSlave()
         if (_sc) _sc->foundBestMove(depth, move, currentValue);
         _currentBestMove = move;
       }
-      //fprintf(stderr, "Sending %s\n", _pv.chain(depth)[depth].name());
       MPI_Send(&value, 1, MPI_INT, 0, WORK, MPI_COMM_WORLD);
-      //MPI_Send(_pv.chain(depth), sizeof(Move)*MAXPVDEPTH, MPI_BYTE, 0, WORK, MPI_COMM_WORLD);
-      MPI_Send(&_pv[depth], sizeof(Move)*MAXPVDEPTH, MPI_BYTE, 0, WORK, MPI_COMM_WORLD);
       int nodesVisited = _sc->getNodesVisited();
       int leavesVisited = _sc->getLeavesVisited();
       fprintf(stderr, "%d has visited %d leaves in %d nodes.\n", _sc->getmyid(), leavesVisited, nodesVisited);
@@ -154,13 +137,7 @@ void ABIDStrategy::enterSlave()
       MPI_Send(&leavesVisited, 1, MPI_INT, 0, WORK, MPI_COMM_WORLD);
       evals+=leavesVisited;
       _sc->clear();
-      
-
-
-      //      fprintf(stderr, "Sent stuff back\n");
-      // send new alpha beta (this should be able to update? LOOK UP) to root. Update: Eval should do it, as root is able to update alpha beta itself.
-      // TODO: send values expected from master. 
-      
+          
     }
   }
   fprintf(stderr, "%d has calced %d evals\n", _sc->getmyid(), evals);
@@ -246,7 +223,7 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
   Move m;
   MoveList list;
   bool depthPhase, doDepthSearch;
-  
+  int alphab=alpha, betab=beta;
   /* We make a depth search for the following move types... */
   int maxType = (depth < _currentMaxDepth-1)  ? Move::maxMoveType :
       (depth < _currentMaxDepth)    ? Move::maxPushType :
@@ -276,99 +253,25 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
   depthPhase = true;
   // evaluation of first child by master, so that we move down the tree to start pvsplit. adjustments needed?
   
-  //  fprintf(stderr, "Maxtype is %d at depth %d of %d\n", maxType, depth, _currentMaxDepth);
-
-  fprintf(stderr, "PV Debug %s at depth %d of %d\n",_pv[depth].name(), depth, _currentMaxDepth);
-  // get next move
-  if (m.type == Move::none) {
-    if (depthPhase)
-      depthPhase = list.getNext(m, maxType);
-    if (!depthPhase)
-    {
-      depthPhase=list.getNext(m, Move::none);
-      //fprintf(stderr, "Reaches nodepthphase for pv.\n");
-      //if (!list.getNext(m, Move::none)) break;
-      // no loop to break out. does code actually reach this? we need a new move, though, so this might work.
-    }
-  }
   
   
-  // we could start with a non-depth move from principal variation
-  doDepthSearch = depthPhase && (m.type <= maxType);
-  
-  _board->playMove(m);
-  
-  /* check for a win position first */
-  if (!_board->isValid()) {
-    
-    /* Shorter path to win position is better */
-    value = 14999-depth;
-  }
-  else {
-    
-    if (depth< _currentMaxDepth/*doDepthSearch*/) {
-      /* opponent searches for its maximum; but we want the
-       * minimum: so change sign (for alpha/beta window too!)
-       */
-      fprintf(stderr, "Recursive call at depth %d of %d.\n", depth, _currentMaxDepth);
-      value = -alphabeta(depth+1, -beta, -alpha);
-    }
-    else {
-      value = evaluate();
-      fprintf(stderr, "Root evals at depth %d of %d.\n", depth, _currentMaxDepth);
-      
-    }
-  }
-  
-  _board->takeBack();
-  
-  if (strncmp("(none)", m.name(), 6)==0) fprintf(stderr, "Error in alphabeta, descent, %s\n", m.name());
-  /* best move so far? */
-  if (value > currentValue) {
-    currentValue = value;
-    fprintf(stderr, "AB: %s, depth %d with val %d\n", m.name(), depth, value);
-    _pv.update(depth, m);
-    fprintf(stderr, "Writin %s at %d, self calced, call 1. New move is %s, evaled at %d.\n", m.name(), depth, _pv[depth].name(), value);
-    if (_sc) _sc->foundBestMove(depth, m, currentValue);
-    if (depth == 0)
-      _currentBestMove = m;
-    
-    /* alpha/beta cut off or win position ... */
-    if (currentValue>14900 || currentValue >= beta) {
-      if (_sc) _sc->finishedNode(depth, _pv.chain(depth));
-      return currentValue;
-    }
-    
-    /* maximize alpha */
-    if (currentValue > alpha) alpha = currentValue;
-  }
-  
-  // end of evaluation of first element, we are now at the bottom of the tree and can start pvsplit
-  
-
-  
-  
-    //fprintf(stderr, "Entering new work distribution");
-    // seed processes
-    int i;
-    char board [500];
-    MPI_Status status;
-    Move tmpMoveChain[MAXPVDEPTH];// maximum size according to variation
-    Move* WorkerMoves  = new Move [_sc->getnprocs()];
-    bool* activeWorkers = new bool [_sc->getnprocs()]; // in case there are less workers than moves, we want to break early when gathering the final values
+  // seed processes
+  int i;
+  char board [500];
+  MPI_Status status;
+  Move* WorkerMoves  = new Move [_sc->getnprocs()];
+  bool* activeWorkers = new bool [_sc->getnprocs()]; // in case there are less workers than moves, we want to break early when gathering the final values
     strncpy(board, _board->getState(), 500);
     for (i = 1; i < _sc->getnprocs(); i++) {
-      //fprintf(stderr, "Seeding Board toprocess %d\n", i);
       
       // distribute board
       MPI_Send(&board, 500, MPI_CHAR, i, WORK, MPI_COMM_WORLD);
-      //fprintf(stderr, "Seeding depth and maxdepth to  %d\n", i);
+      
       // send depth and maxdepth
       MPI_Send(&depth, 1, MPI_INT, i, WORK, MPI_COMM_WORLD);
       MPI_Send(&_currentMaxDepth, 1, MPI_INT, i, WORK, MPI_COMM_WORLD);
       
       // send maxtype
-      //fprintf(stderr, "Seeding maxtypeprocess %d\n", i);
       MPI_Send(&maxType, 1, MPI_INT, i, WORK, MPI_COMM_WORLD);
       
       // get next move
@@ -378,7 +281,6 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
         if (!list.getNext(m, Move::none))
         {
           // send all remaining processes stop signal, get out of seeding loop
-          //fprintf(stderr, "Terminating all processes\n");
           for (; i<_sc->getnprocs();i++)
             MPI_Send (0, 1, MPI_INT, i, DIE, MPI_COMM_WORLD);
           break;
@@ -390,19 +292,19 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
       MPI_Send(&m.type, 1, MPI_INT, i, WORK, MPI_COMM_WORLD);
       MPI_Send(&m.direction, 1, MPI_UNSIGNED_CHAR, i, WORK, MPI_COMM_WORLD);
       MPI_Send(&m.field, 1, MPI_SHORT, i, WORK, MPI_COMM_WORLD);
-      MPI_Send(&alpha, 1, MPI_INT, i, WORK, MPI_COMM_WORLD);
-      MPI_Send(&beta, 1, MPI_INT, i, WORK, MPI_COMM_WORLD);
+      MPI_Send(&alphab, 1, MPI_INT, i, WORK, MPI_COMM_WORLD);
+      MPI_Send(&betab, 1, MPI_INT, i, WORK, MPI_COMM_WORLD);
       MPI_Send(&value, 1, MPI_INT, i, WORK, MPI_COMM_WORLD);
       MPI_Send(&doDepthSearch, 1, MPI::BOOL, i, WORK, MPI_COMM_WORLD);
-      //fprintf(stderr, "Finished seeding to process %d, Alpha: %d, Beta: %d\n", i, alpha, beta);
+      
     }
     
     
-    int ctr=1; // seeding is first iteration
+    
     int leavesVisited=0, nodesVisited=0;
     Move tempmove;
     while (1) {
-      //fprintf(stderr, "Iteration %d\n", ctr++);
+      
       // get next move
       if (depthPhase)
         depthPhase = list.getNext(m, maxType);
@@ -419,7 +321,7 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
       // at this point, every process does some work. 1. listen on input. 2. send new move back
       
       MPI_Recv(&value, 1, MPI_INT, MPI_ANY_SOURCE, WORK, MPI_COMM_WORLD, &status);
-      MPI_Recv(&tmpMoveChain, sizeof(Move)*MAXPVDEPTH, MPI_BYTE, status.MPI_SOURCE, WORK, MPI_COMM_WORLD, &status);
+      
 
       // also recv no of evals
       MPI_Recv(&nodesVisited, 1, MPI_INT, status.MPI_SOURCE, WORK, MPI_COMM_WORLD, &status);
@@ -438,40 +340,29 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
       MPI_Send(&beta, 1, MPI_INT, status.MPI_SOURCE, WORK, MPI_COMM_WORLD);
       MPI_Send(&value, 1, MPI_INT, status.MPI_SOURCE, WORK, MPI_COMM_WORLD);
       MPI_Send(&doDepthSearch, 1, MPI::BOOL, status.MPI_SOURCE, WORK, MPI_COMM_WORLD);
-      fprintf(stderr, "Distributed move is %s.\n", m.name());
       WorkerMoves[status.MPI_SOURCE] = m;
       
-      // currently, value is at correct value, but move is the new distributed move. replace by evaluated move(chain)
       
       
       
       /* best move so far? */
       if (value > currentValue) {
-        //fprintf(stderr, "\n");
-        //tempmove.print();
-        fprintf(stderr, "New best move %s is from %d at depth %d\n", tempmove.name(), status.MPI_SOURCE, depth);
-        
         currentValue = value;
         _pv.update(depth, tempmove);
-        fprintf(stderr, "Writin %s at %d, call 0. New val is %s, evaled at %d\n", tempmove.name(), depth, _pv[depth].name(), value);
-        //memcpy(&(_pv[depth]), &tmpMoveChain, sizeof(Move) * depth);
         if (_sc) _sc->foundBestMove(depth, tempmove, currentValue);
         if (depth == 0)
           _currentBestMove = tempmove;
-        //fprintf(stderr, "New best move %s is from %d.\nNew chain is %s.\n", tempmove.name(), status.MPI_SOURCE, _pv.chain(depth)->name());
-                  
+        
         /* alpha/beta cut off or win position ... */
         if (currentValue>14900 || currentValue >= beta) {
           if (_sc) _sc->finishedNode(depth, _pv.chain(depth));
           {
-            //fprintf(stderr, "Return kills the loop as well.\n");
-            // what to do in this case? wait until every process places something in buffer, then terminate? ugly!
+            // terminate running processes. they are currently working, so we have to empty buffer.
             for (i=1; i<_sc->getnprocs(); i++)
             {
               if (activeWorkers[i])
               {
                 MPI_Recv(&value, 1, MPI_INT, i, WORK, MPI_COMM_WORLD, &status);
-                MPI_Recv(&tmpMoveChain, sizeof(Move)*MAXPVDEPTH, MPI_BYTE, i, WORK, MPI_COMM_WORLD, &status);
                 MPI_Recv(&nodesVisited, 1, MPI_INT, i, WORK, MPI_COMM_WORLD, &status);
                 MPI_Recv(&leavesVisited, 1, MPI_INT, i, WORK, MPI_COMM_WORLD, &status);
                 _sc->addNodesvisited(nodesVisited);
@@ -489,41 +380,26 @@ int ABIDStrategy::alphabeta(int depth, int alpha, int beta)
         if (currentValue > alpha) alpha = currentValue;
       }
       
-      if (_stopSearch) {/*fprintf(stderr, "Exiting\n");*/ break;} // depthPhase=false;
+      if (_stopSearch) {break;} // depthPhase=false;
     m.type = Move::none;
     }
-    
-    //    fprintf(stderr, "Terminated while(1)\n");
     
     // gather all values
     for (i = 1; i < _sc->getnprocs(); i++)
     {
-      //      fprintf(stderr, "Iteration %d\n", ctr++);
-      //      fprintf(stderr, "Got into gather loop\n");
       // only gather values from active workers obviously
       if (activeWorkers[i])
       {
         MPI_Recv(&value, 1, MPI_INT, i, WORK, MPI_COMM_WORLD, &status);
-        MPI_Recv(&tmpMoveChain, sizeof(Move)*MAXPVDEPTH, MPI_BYTE, i, WORK, MPI_COMM_WORLD, &status);
         MPI_Recv(&nodesVisited, 1, MPI_INT, i, WORK, MPI_COMM_WORLD, &status);
         MPI_Recv(&leavesVisited, 1, MPI_INT, i, WORK, MPI_COMM_WORLD, &status);
         _sc->addNodesvisited(nodesVisited);
         _sc->addLeavesvisited(leavesVisited);
-        
-
-        //fprintf(stderr, "Terminating inner loop of worker %d\n", i);
-        MPI_Send(&value, 1, MPI_INT, i, DIE, MPI_COMM_WORLD);
+         MPI_Send(&value, 1, MPI_INT, i, DIE, MPI_COMM_WORLD);
         tempmove = WorkerMoves[i];
-        //tempmove.print();
-        //fprintf(stderr, "New best move");
-          /* bestMove move so far? */
-        if (value > currentValue) {
+         if (value > currentValue) {
           currentValue = value;
           _pv.update(depth, tempmove);
-          //fprintf(stderr, "New best move %s is from %d.\nNew chain is %s.\n", tempmove.name(), i, _pv.chain(depth)->name());
-          //_pv.chain(int d)
-          fprintf(stderr, "reachin update at depth %d. Writing move %s. New move is %s, evaled at %d.\n", depth, tempmove.name(), _pv[depth].name(), value);
-          //memcpy(&(_pv[depth]), &tmpMoveChain, sizeof(Move) * depth);
           if (_sc) _sc->foundBestMove(depth, tempmove, currentValue);
           if (depth == 0)
             _currentBestMove = tempmove;
@@ -602,7 +478,7 @@ int ABIDStrategy::alphabetaworker(int depth, int alpha, int beta)
     }
     else {
 
-      if (/*depth<_currentMaxDepth*/doDepthSearch) {
+      if (doDepthSearch) {
         /* opponent searches for its maximum; but we want the
          * minimum: so change sign (for alpha/beta window too!)
          */

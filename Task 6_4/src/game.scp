@@ -1,0 +1,25 @@
+#!/bin/bash
+#@ wall_clock_limit = 00:0:30
+#@ job_name = heat
+#@ job_type = MPICH
+#@ class = test
+#@ output = job.out
+#@ error = job.out
+#@ node = 1
+##@ total_tasks=16
+##@ task_geometry = {(0,2) (1,3)}
+#@ tasks_per_node = 16
+#@ network.mpi = sn_all,not_shared,us
+#@ node_usage = not_shared
+#@ energy_policy_tag = NONE
+#@ queue
+module load tempdir
+module unload mpi.ibm
+module load mpi.intel
+module load valgrind
+. /etc/profile
+#./player -h
+#./player -s 1 X -2 -v&
+mpirun -n 4 player -s 0 O -n -1 -v 4&
+./player -s 2 X -1  2&
+./start position-midgame2

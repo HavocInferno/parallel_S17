@@ -1,5 +1,5 @@
 #!/bin/bash
-#@ wall_clock_limit = 00:0:30
+#@ wall_clock_limit = 00:45:00
 #@ job_name = heat
 #@ job_type = MPICH
 #@ class = test
@@ -20,6 +20,6 @@ module load valgrind
 . /etc/profile
 #./player -h
 #./player -s 1 X -2 -v&
-mpirun -n 8 player -s 0 O -n -1 -v 5&
-./player -s 2 X -1  2&
-./start position-midgame2
+mpirun -n 12 player -s 0 O -n  2 -v&
+./player -s 1 X   1&
+./start

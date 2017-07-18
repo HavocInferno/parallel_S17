@@ -293,7 +293,7 @@ int main(int argc, char* argv[])
     
     if (myid==0)
       {
-        ss->registerCallbacks(new SearchCallbacks(1/*verbose*/, myid, nprocs));
+        ss->registerCallbacks(new SearchCallbacks(verbose, myid, nprocs));
 	MyDomain d(lport);
 	l.install(&d);
 	if (host) d.addConnection(host, rport);

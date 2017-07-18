@@ -54,7 +54,7 @@ void SearchCallbacks::finished(Move& m)
 	(1000* t2.tv_sec + t2.tv_usec / 1000) -
 	(1000* t1.tv_sec + t1.tv_usec / 1000);
 
-    //if (!_verbose) return;
+    if (!_verbose) return;
 
     if (_msecsPassed <1) _msecsPassed = 1;
     if (_nodesVisited<1) _nodesVisited = 1;
