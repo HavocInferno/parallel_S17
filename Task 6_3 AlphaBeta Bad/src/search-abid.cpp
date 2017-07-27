@@ -56,7 +56,6 @@ void ABIDStrategy::enterSlave()
   int depth = 0;
   int maxType;
   int value;
-  bool lol;
   int currentValue = -14999;
   int alpha, beta;
   int type;

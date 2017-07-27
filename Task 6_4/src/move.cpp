@@ -290,9 +290,34 @@ void Variation::update(int d, Move& m)
     //fprintf(stderr, "Entered update with depth %d, but maxdepth is %d.\n", d, actMaxDepth);
     return;
   }
+
   for(i=d+1;i<=actMaxDepth;i++) {
     move[d][i]=move[d+1][i];
     move[d+1][i].type = Move::none;
   }
   move[d][d]=m;
+    if (debug){
+  int k,j;
+  fprintf(stderr, "\n Added move %s ad depth %d. New matrix:\n", m.name(), d);
+  for(k=0;k<maxDepth;k++){
+    for(j=0;j<maxDepth;j++) {
+      fprintf(stderr, "\t|%s|", move[k][j].name());
+      
+    }
+    fprintf(stderr, "\n");
+  }
+  fprintf(stderr, "\n");}
 }
+void Variation::print()
+{
+  int k, j;
+  fprintf(stderr, "Printing pv:\n");
+  for(k=0;k<maxDepth;k++){
+    for(j=0;j<maxDepth;j++) {
+      fprintf(stderr, "\t|%s|", move[k][j].name());
+    }
+    fprintf(stderr, "\n");
+  }
+  fprintf(stderr, "\n");
+}
+

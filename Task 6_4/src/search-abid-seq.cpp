@@ -6,7 +6,6 @@
  */
 
 #include <stdio.h>
-
 #include "search.h"
 #include "board.h"
 
@@ -43,6 +42,7 @@ void ABIDStrategySeq::searchBestMove()
     int nalpha, nbeta, currentValue = 0;
 
     _pv.clear(_maxDepth);
+    _pv.setDebug(false);
     _currentBestMove.type = Move::none;
     _currentMaxDepth=1;
     
@@ -91,7 +91,12 @@ void ABIDStrategySeq::searchBestMove()
 
 	/* Window in both directions cause of deepening */
 	alpha = currentValue - 200, beta = currentValue + 200;
-
+	if (_sc->verbose()==2)
+	  {	
+	    fprintf(stderr, "At depth %d in root\n", _currentMaxDepth);
+	    _pv.print();
+	    fprintf(stderr, "Move has val %d.\n", currentValue);        
+	  }
 	if (_stopSearch) break;
 
 	_currentMaxDepth++;
@@ -173,6 +178,7 @@ int ABIDStrategySeq::alphabeta(int depth, int alpha, int beta)
 		value = -alphabeta(depth+1, -beta, -alpha);
             }
             else {
+              //fprintf(stderr, "Depth %d of %d\n", depth, _currentMaxDepth);
 		value = evaluate();
 	    }
 	}

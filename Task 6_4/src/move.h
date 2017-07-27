@@ -137,13 +137,13 @@ class Variation
 {
  public:
   enum { maxDepth = 10 };
-  Variation() { clear(1); }
+  Variation() { debug=false; clear(1); }
 
   /* Does the best sequence have a move for depth d ? */
   bool hasMove(int d)
     {  return (d>actMaxDepth) ?
 	 false : (move[0][d].type != Move::none); }
-
+  void setDebug (bool arg) {debug=arg;}
   /* Get move at index i from best move chain */
   Move& operator[](int i)
     { return (i<0 || i>=maxDepth) ? move[0][0] : move[0][i]; }
@@ -155,15 +155,19 @@ class Variation
   /* Update best move from depth d, starting with move m at this depth */
   void update(int d, Move& m);
 
+  void print();
+  
   /* Clear sequence storage for moves from depth d */
   void clear(int d);
 
   /* Set maximum supported depth */
   void setMaxDepth(int d)
     { actMaxDepth = (d>maxDepth) ? maxDepth-1 : d; }
+  int getMaxDepth() {return actMaxDepth;}
 
  private:
   Move move[maxDepth][maxDepth];
+  bool debug;
   int actMaxDepth;
 };
 
